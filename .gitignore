@@ -8,7 +8,6 @@
 .buildlog/
 .history
 .svn/
-local.properties
 
 # IntelliJ related
 *.iml
@@ -16,15 +15,19 @@ local.properties
 *.iws
 .idea/
 
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/
 .flutter-plugins
-.flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
-/build/
+build/
 
 # Android related
 **/android/**/gradle-wrapper.jar
@@ -52,7 +55,6 @@ local.properties
 **/ios/**/profile
 **/ios/**/xcuserdata
 **/ios/.generated/
-**/ios/build/**/*
 **/ios/Flutter/App.framework
 **/ios/Flutter/Flutter.framework
 **/ios/Flutter/Generated.xcconfig
@@ -69,17 +71,3 @@ local.properties
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-
-# Additional packages
-packages/**/pubspec.lock
-packages/**/build/
-generated_plugin_registrant.dart
-GeneratedPluginRegistrant.h
-GeneratedPluginRegistrant.m
-generated_plugin_registrant.cc
-GeneratedPluginRegistrant.java
-GeneratedPluginRegistrant.swift
-examples/all_plugins/pubspec.yaml
-
-# Downloaded by the plugin tools.
-google-java-format-1.3-all-deps.jar

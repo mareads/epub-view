@@ -1,50 +1,131 @@
-<img src=".github/MEDIA/logo.png" alt="Flutter plugins" width="100%">
+# epub_view
 
-[![Build Status](https://api.cirrus-ci.com/github/ScerIO/packages.flutter.svg)](https://cirrus-ci.com/github/scerio/packages.flutter/main)
+Pure flutter widget (non native) for view EPUB documents on all platforms. Based on [epub](https://pub.dev/packages/epub) package. Render with flutter widgets (not native view) on any platforms: **Web**, **MacOs**, **Windows** **Linux**, **Android** and **iOS**
 
-## Available packages and plugins 
+## Showcase
 
-| Package | Source code |
-|---|---|
-| [![pub package][auto_animated_badge]][auto_animated_pub] | [`packages/auto_animated`][auto_animated_code] |
-| [![pub package][flutter_color_badge]][flutter_color_pub] | [`packages/flutter_color`][flutter_color_code] |
-| [![pub package][pdfx_badge]][pdfx_pub] | [`packages/pdfx`][pdfx_code] |
-| [![pub package][epub_view_badge]][epub_view_pub] | [`packages/epub_view`][epub_view_code] |
-| [![pub package][explorer_badge]][explorer_pub] | [`packages/explorer`][explorer_code] |
+<img width="50%" src="https://raw.githubusercontent.com/ScerIO/packages.flutter/main/packages/epub_view/example/media/example.gif?raw=true" />
 
+## Getting Started
+In your flutter project add the dependency:
+```shell
+flutter pub add epub_view
+```
 
-## Outdated / Transferred / Renamed packages and plugins 
+## Usage example:
+```dart
+import 'dart:typed_data';
 
-| Package | Source code |
-|---|---|
-| [![pub package][native_pdf_renderer_badge]][native_pdf_renderer_pub] | [`packages/native_pdf_renderer`][native_pdf_renderer_code] |
-| [![pub package][native_pdf_view_badge]][native_pdf_view_pub] | [`packages/native_pdf_view`][native_pdf_view_code] |
+import 'package:flutter/material.dart';
+import 'package:flutter_epub/flutter_epub.dart';
 
+late EpubController _epubController;
 
-[auto_animated_pub]: https://pub.dev/packages/auto_animated
-[auto_animated_code]: https://github.com/scerio/packages.flutter/tree/main/packages/auto_animated
-[auto_animated_badge]: https://img.shields.io/pub/v/auto_animated.svg
+@override
+void initState() {
+  super.initState();
+  _epubController = EpubController(
+    // Load document
+    document: EpubDocument.openAsset('assets/book.epub'),
+    // Set start point
+    epubCfi: 'epubcfi(/6/6[chapter-2]!/4/2/1612)',
+  );
+}
 
-[flutter_color_pub]: https://pub.dev/packages/flutter_color
-[flutter_color_code]: https://github.com/scerio/packages.flutter/tree/main/packages/flutter_color
-[flutter_color_badge]: https://img.shields.io/pub/v/flutter_color.svg
+@override
+Widget build(BuildContext context) => Scaffold(
+  appBar: AppBar(
+    // Show actual chapter name
+    title: EpubViewActualChapter(
+      controller: _epubController,
+      builder: (chapterValue) => Text(
+        'Chapter: ' + (chapterValue?.chapter?.Title?.replaceAll('\n', '').trim() ?? ''),
+        textAlign: TextAlign.start,
+      )
+    ),
+  ),
+  // Show table of contents
+  drawer: Drawer(
+    child: EpubViewTableOfContents(
+      controller: _epubController,
+    ),
+  ),
+  // Show epub document
+  body: EpubView(
+    controller: _epubController,
+  ),
+);
+```
 
-[pdfx_pub]: https://pub.dev/packages/pdfx
-[pdfx_code]: https://github.com/scerio/packages.flutter/tree/main/packages/pdfx
-[pdfx_badge]: https://img.shields.io/pub/v/pdfx.svg
+### How start from last view position?
+This method allows you to keep the exact reading position even inside the chapter:
+```dart
+_epubController = EpubController(
+  // initialize with epub cfi string for open book from last position
+  epubCfi: 'epubcfi(/6/6[chapter-2]!/4/2/1612)',
+);
 
-[epub_view_pub]: https://pub.dev/packages/epub_view
-[epub_view_code]: https://github.com/scerio/packages.flutter/tree/main/packages/epub_view
-[epub_view_badge]: https://img.shields.io/pub/v/epub_view.svg
+// Attach controller
+EpubView(
+  controller: _epubController,
+);
 
-[explorer_pub]: https://pub.dev/packages/explorer
-[explorer_code]: https://github.com/scerio/packages.flutter/tree/main/packages/explorer
-[explorer_badge]: https://img.shields.io/pub/v/explorer.svg
+// Get epub cfi string
+// for example output - epubcfi(/6/6[chapter-2]!/4/2/1612)
+final cfi = _epubController.generateEpubCfi();
 
-[native_pdf_renderer_pub]: https://pub.dev/packages/native_pdf_renderer
-[native_pdf_renderer_code]: https://github.com/ScerIO/packages.flutter/tree/f39ebb28281e1c9560757a49d20d18a013529f00/packages/native_pdf_renderer
-[native_pdf_renderer_badge]: https://img.shields.io/pub/v/native_pdf_renderer.svg
+// or usage controller for navigate
+_epubController.gotoEpubCfi('epubcfi(/6/6[chapter-2]!/4/2/1612)');
+```
 
-[native_pdf_view_pub]: https://pub.dev/packages/native_pdf_view
-[native_pdf_view_code]: https://github.com/ScerIO/packages.flutter/tree/f39ebb28281e1c9560757a49d20d18a013529f00/packages/native_pdf_view
-[native_pdf_view_badge]: https://img.shields.io/pub/v/native_pdf_view.svg
+## Api
+
+### Open document
+
+**Local document open:**
+```dart
+EpubDocument.openAsset('assets/sample.pdf')
+
+EpubDocument.openData(FutureOr<Uint8List> data)
+
+// Not supports on Web
+EpubDocument.openFile('path/to/file/on/device')
+```
+**Network document open:**
+
+Install [[network_file]](https://pub.dev/packages/internet_file) package (supports all platforms):
+```shell
+flutter pub add internet_file
+```
+
+And use it
+```dart
+import 'package:internet_file/internet_file.dart';
+
+// The cors policy is required on the server. 
+// You can raise your cors proxy.
+EpubDocument.openData(InternetFile.get('https://link.to/book.epub'))
+```
+
+### Control document
+```dart
+// Get epub cfi string of actual view insets
+// for example output - epubcfi(/6/6[chapter-2]!/4/2/1612)
+final cfi = _epubController.generateEpubCfi();
+
+// Navigate to paragraph in document
+_epubController.gotoEpubCfi('epubcfi(/6/6[chapter-2]!/4/2/1612)');
+```
+
+### Document callbacks
+```dart
+EpubView(
+  controller: epubController,
+  
+  onExternalLinkPressed: (href) {},
+
+  onDocumentLoaded: (document) {},
+  onChapterChanged: (chapter) {},
+  onDocumentError: (error) {},
+);
+```
