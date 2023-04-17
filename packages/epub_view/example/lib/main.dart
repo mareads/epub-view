@@ -80,8 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     _epubReaderController = EpubController(
-      document:
-          EpubDocument.openAsset('assets/New-Findings-on-Shirdi-Sai-Baba.epub'),
+      document: EpubDocument.openAsset('assets/185.epub'),
       // epubCfi:
       //     'epubcfi(/6/26[id4]!/4/2/2[id4]/22)', // book.epub Chapter 3 paragraph 10
       // epubCfi:
@@ -119,7 +118,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         body: EpubView(
           builders: EpubViewBuilders<DefaultBuilderOptions>(
-            options: const DefaultBuilderOptions(),
+            options: const DefaultBuilderOptions(
+              textStyle: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w300, height: 0),
+            ),
             chapterDividerBuilder: (_) => const Divider(),
           ),
           controller: _epubReaderController,
