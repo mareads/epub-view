@@ -20,4 +20,10 @@ dev_dependencies:
 flutter:
   assets:
     - assets/
+    - assets/icons/
+    - assets/icons/font_sizes/
+    - assets/icons/line_spaces/
+    - assets/icons/navigation/
+    - assets/images/
+
   uses-material-design: true

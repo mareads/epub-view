@@ -4,10 +4,11 @@ class EpubController {
   EpubController({
     required this.document,
     this.epubCfi,
-  });
+  }) : readerSettingController = ReaderSettingCubit();
 
   Future<EpubBook> document;
   final String? epubCfi;
+  final ReaderSettingCubit readerSettingController;
 
   _EpubViewState? _epubViewState;
   List<EpubViewChapter>? _cacheTableOfContents;

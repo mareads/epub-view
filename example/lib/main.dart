@@ -2,7 +2,13 @@ import 'package:epub_view/epub_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, SystemUiOverlayStyle;
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: await getTemporaryDirectory(),
+  );
+  runApp(const MyApp());
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -30,8 +36,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Brightness get platformBrightness =>
-      MediaQueryData.fromWindow(WidgetsBinding.instance.window)
-          .platformBrightness;
+      MediaQueryData.fromWindow(WidgetsBinding.instance.window).platformBrightness;
 
   void _setSystemUIOverlayStyle() {
     if (platformBrightness == Brightness.light) {
@@ -56,7 +61,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         title: 'Epub demo',
         theme: ThemeData(
           primarySwatch: Colors.blue,
-          brightness: Brightness.light,
+          scrollbarTheme: ScrollbarThemeData(
+            crossAxisMargin: 2,
+            mainAxisMargin: 0,
+            minThumbLength: 20,
+            thickness: MaterialStateProperty.all(6),
+            thumbVisibility: MaterialStateProperty.all(true),
+            thumbColor: MaterialStateProperty.all(const Color(0xFF3f54d9)),
+            radius: const Radius.circular(5),
+            trackColor: MaterialStateProperty.all(const Color(0xfff4f4f7)),
+            trackVisibility: MaterialStateProperty.all(true),
+            trackBorderColor: MaterialStateProperty.all(Colors.transparent),
+            interactive: true,
+          ),
+          colorScheme: const ColorScheme.light().copyWith(
+            primary: const Color(0xFF3F54D9),
+            secondary: const Color(0xFF3F54D9).withOpacity(.6),
+            primaryContainer: const Color(0xFFffffff),
+            background: const Color(0xff0c1135),
+          ),
         ),
         darkTheme: ThemeData(
           primarySwatch: Colors.blue,
@@ -97,30 +120,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: EpubViewActualChapter(
-            controller: _epubReaderController,
-            builder: (chapterValue) => Text(
-              chapterValue?.chapter?.Title?.replaceAll('\n', '').trim() ?? '',
-              textAlign: TextAlign.start,
-            ),
-          ),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.save_alt),
-              color: Colors.white,
-              onPressed: () => _showCurrentEpubCfi(context),
-            ),
-          ],
-        ),
-        drawer: Drawer(
-          child: EpubViewTableOfContents(controller: _epubReaderController),
-        ),
+        // appBar: AppBar(
+        //   title: EpubViewActualChapter(
+        //     controller: _epubReaderController,
+        //     builder: (chapterValue) => Text(
+        //       chapterValue?.chapter?.Title?.replaceAll('\n', '').trim() ?? '',
+        //       textAlign: TextAlign.start,
+        //     ),
+        //   ),
+        //   actions: <Widget>[
+        //     IconButton(
+        //       icon: const Icon(Icons.save_alt),
+        //       color: Colors.white,
+        //       onPressed: () => _showCurrentEpubCfi(context),
+        //     ),
+        //   ],
+        // ),
+        // drawer: Drawer(
+        //   child: EpubViewTableOfContents(controller: _epubReaderController),
+        // ),
         body: EpubView(
           builders: EpubViewBuilders<DefaultBuilderOptions>(
             options: const DefaultBuilderOptions(
-              textStyle: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w300, height: 0),
+              textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
             ),
             chapterDividerBuilder: (_) => const Divider(),
           ),

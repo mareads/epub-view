@@ -13,14 +13,37 @@ dependencies:
     sdk: flutter
   epubx: ^3.0.0
   equatable: ^2.0.3
+  bloc: ^8.1.1
+  flutter_bloc: ^8.1.2
   html: ^0.15.0
   flutter_html: ^3.0.0-alpha.3
+  flutter_svg: any
+  google_fonts: ^4.0.3
+  hive: ^2.2.3
+  hydrated_bloc: ^9.1.0
+  path_provider: ^2.0.14
   scrollable_positioned_list: ^0.3.2
   collection: ^1.16.0
   universal_file: ^1.0.0
+  screen_brightness: ^0.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/
+    - assets/icons/font_sizes/
+    - assets/icons/line_spaces/
+    - assets/icons/navigation/
+    - assets/images/
+
+  fonts:
+    - family: JsJindara
+      fonts:
+        - asset: assets/fonts/js_jindara/JS-Jindara-Normal.ttf
 
