@@ -7,13 +7,29 @@ import 'package:epub_view/src/data/epub_parser.dart';
 import 'package:epub_view/src/data/models/chapter.dart';
 import 'package:epub_view/src/data/models/chapter_view_value.dart';
 import 'package:epub_view/src/data/models/paragraph.dart';
+import 'package:epub_view/src/data/setting/src/epub_font_family.dart';
+import 'package:epub_view/src/data/setting/src/epub_font_size.dart';
+import 'package:epub_view/src/data/setting/src/epub_theme_mode.dart';
+import 'package:epub_view/src/providers/cubits/reader_setting_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import 'widgets/app_bar.dart';
+import 'widgets/theme_setting.dart';
+import 'widgets/toolbar.dart';
+
 export 'package:epubx/epubx.dart' hide Image;
+export 'package:hydrated_bloc/hydrated_bloc.dart';
+export 'package:path_provider/path_provider.dart';
+
+export 'widgets/app_bar.dart';
+export 'widgets/theme_setting.dart';
+export 'widgets/toolbar.dart';
 
 part '../epub_controller.dart';
+
 part '../helpers/epub_view_builders.dart';
 
 const _minTrailingEdge = 0.55;
@@ -32,12 +48,15 @@ class EpubView extends StatefulWidget {
       options: DefaultBuilderOptions(),
     ),
     this.shrinkWrap = false,
+    this.enableNavigationBar = true,
     Key? key,
   }) : super(key: key);
 
   final EpubController controller;
   final ExternalLinkPressed? onExternalLinkPressed;
   final bool shrinkWrap;
+  final bool enableNavigationBar;
+
   final void Function(EpubChapterViewValue? value)? onChapterChanged;
 
   /// Called when a document is loaded
@@ -53,7 +72,7 @@ class EpubView extends StatefulWidget {
   State<EpubView> createState() => _EpubViewState();
 }
 
-class _EpubViewState extends State<EpubView> {
+class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   Exception? _loadingError;
   ItemScrollController? _itemScrollController;
   ItemPositionsListener? _itemPositionListener;
@@ -62,6 +81,19 @@ class _EpubViewState extends State<EpubView> {
   EpubCfiReader? _epubCfiReader;
   EpubChapterViewValue? _currentValue;
   final _chapterIndexes = <int>[];
+
+  // Theme/Setting and Progress-Bar
+  bool isShowNavigationBar = true;
+  bool isShowThemeSetting = false;
+  bool isShowToc = false;
+
+  late final AnimationController _appBarAnimationController;
+  late final Animation<double> _appBarAnimation;
+  late AnimationController _tocAnimationController;
+  late Animation<Offset> _tocAnimation;
+  late final AnimationController _themeSettingAnimationController;
+  late final Animation<double> _themeSettingAnimation;
+  late StreamController<int> pageNumberController;
 
   EpubController get _controller => widget.controller;
 
@@ -87,12 +119,51 @@ class _EpubViewState extends State<EpubView> {
         setState(() {});
       }
     });
+
+    _appBarAnimationController = animationController;
+    _appBarAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _appBarAnimationController,
+      curve: Curves.linear,
+    ));
+
+    _tocAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+    _tocAnimation = Tween<Offset>(
+      begin: const Offset(0, -0.3),
+      end: const Offset(0, 0),
+    ).animate(CurvedAnimation(
+      parent: _tocAnimationController,
+      curve: Curves.linear,
+    ));
+
+    _themeSettingAnimationController = animationController;
+    _themeSettingAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _themeSettingAnimationController,
+      curve: Curves.linear,
+    ));
+    pageNumberController = StreamController.broadcast();
   }
+
+  AnimationController get animationController => AnimationController(
+        duration: const Duration(milliseconds: 500),
+        vsync: this,
+      );
 
   @override
   void dispose() {
     _itemPositionListener!.itemPositions.removeListener(_changeListener);
     _controller._detach();
+    _appBarAnimationController.dispose();
+    _tocAnimationController.dispose();
+    _themeSettingAnimationController.dispose();
     super.dispose();
   }
 
@@ -101,8 +172,7 @@ class _EpubViewState extends State<EpubView> {
       return true;
     }
     _chapters = parseChapters(_controller._document!);
-    final parseParagraphsResult =
-        parseParagraphs(_chapters, _controller._document!.Content);
+    final parseParagraphsResult = parseParagraphs(_chapters, _controller._document!.Content);
     _paragraphs = parseParagraphsResult.flatParagraphs;
     _chapterIndexes.addAll(parseParagraphsResult.chapterIndexes);
 
@@ -118,8 +188,7 @@ class _EpubViewState extends State<EpubView> {
   }
 
   void _changeListener() {
-    if (_paragraphs.isEmpty ||
-        _itemPositionListener!.itemPositions.value.isEmpty) {
+    if (_paragraphs.isEmpty || _itemPositionListener!.itemPositions.value.isEmpty) {
       return;
     }
     final position = _itemPositionListener!.itemPositions.value.first;
@@ -200,12 +269,10 @@ class _EpubViewState extends State<EpubView> {
       return;
     } else {
       final paragraph = _paragraphByIdRef(hrefIdRef);
-      final chapter =
-          paragraph != null ? _chapters[paragraph.chapterIndex] : null;
+      final chapter = paragraph != null ? _chapters[paragraph.chapterIndex] : null;
 
       if (chapter != null && paragraph != null) {
-        final paragraphIndex =
-            _epubCfiReader?.getParagraphIndexByElement(paragraph.element);
+        final paragraphIndex = _epubCfiReader?.getParagraphIndexByElement(paragraph.element);
         final cfi = _epubCfiReader?.generateCfi(
           book: _controller._document,
           chapter: chapter,
@@ -219,18 +286,45 @@ class _EpubViewState extends State<EpubView> {
     }
   }
 
-  Paragraph? _paragraphByIdRef(String idRef) =>
-      _paragraphs.firstWhereOrNull((paragraph) {
+  void _toggleToc() {
+    setState(() {
+      isShowToc = !isShowToc;
+      if (isShowThemeSetting) isShowThemeSetting = false;
+    });
+    isShowToc ? _tocAnimationController.forward() : _tocAnimationController.reverse();
+  }
+
+  void _toggleThemeSetting() {
+    setState(() {
+      isShowThemeSetting = !isShowThemeSetting;
+      if (isShowToc) isShowToc = false;
+    });
+    isShowThemeSetting
+        ? _themeSettingAnimationController.forward()
+        : _themeSettingAnimationController.reverse();
+  }
+
+  void _toggleToolOrAppBar() => isShowNavigationBar ? _hideAppBar() : _showAppBar();
+
+  void _showAppBar() {
+    setState(() => isShowNavigationBar = true);
+    _appBarAnimationController.reverse();
+  }
+
+  void _hideAppBar() {
+    setState(() => isShowNavigationBar = false);
+    _appBarAnimationController.forward();
+  }
+
+  Paragraph? _paragraphByIdRef(String idRef) => _paragraphs.firstWhereOrNull((paragraph) {
         if (paragraph.element.id == idRef) {
           return true;
         }
 
-        return paragraph.element.children.isNotEmpty &&
-            paragraph.element.children[0].id == idRef;
+        return paragraph.element.children.isNotEmpty && paragraph.element.children[0].id == idRef;
       });
 
-  EpubChapter? _chapterByFileName(String? fileName) =>
-      _chapters.firstWhereOrNull((chapter) {
+  EpubChapter? _chapterByFileName(String? fileName) => _chapters.firstWhereOrNull((chapter) {
         if (fileName != null) {
           if (chapter.ContentFileName!.contains(fileName)) {
             return true;
@@ -334,34 +428,45 @@ class _EpubViewState extends State<EpubView> {
     final defaultBuilder = builders as EpubViewBuilders<DefaultBuilderOptions>;
     final options = defaultBuilder.options;
 
-    return Column(
-      children: <Widget>[
-        if (chapterIndex >= 0 && paragraphIndex == 0)
-          builders.chapterDividerBuilder(chapters[chapterIndex]),
-        Html(
-          data: paragraphs[index].element.outerHtml,
-          onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-          style: {
-            'html': Style(
-              padding: options.paragraphPadding as EdgeInsets?,
-            ).merge(Style.fromTextStyle(options.textStyle)),
-          },
-          customRenders: {
-            tagMatcher('img'):
-                CustomRender.widget(widget: (context, buildChildren) {
-              final url = context.tree.element!.attributes['src']!
-                  .replaceAll('../', '');
-              return Image(
-                image: MemoryImage(
-                  Uint8List.fromList(
-                    document.Content!.Images![url]!.Content!,
+    return BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+      builder: (_, state) {
+        return Column(
+          children: <Widget>[
+            if (chapterIndex >= 0 && paragraphIndex == 0)
+              builders.chapterDividerBuilder(chapters[chapterIndex]),
+            Html(
+              data: paragraphs[index].element.outerHtml,
+              onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+              style: {
+                'html': Style(
+                  padding: options.paragraphPadding as EdgeInsets?,
+                  lineHeight: LineHeight(state.lineHeight.value),
+                ).merge(Style.fromTextStyle(
+                  TextStyle(
+                    fontWeight: FontWeight.w300,
+                    fontFamily: state.fontFamily.family,
+                    fontSize:
+                        state.fontFamily.isJsJindara ? state.fontSize.dataJs : state.fontSize.data,
+                    color: state.themeMode.data.textColor,
                   ),
-                ),
-              );
-            }),
-          },
-        ),
-      ],
+                )),
+              },
+              customRenders: {
+                tagMatcher('img'): CustomRender.widget(widget: (context, buildChildren) {
+                  final url = context.tree.element!.attributes['src']!.replaceAll('../', '');
+                  return Image(
+                    image: MemoryImage(
+                      Uint8List.fromList(
+                        document.Content!.Images![url]!.Content!,
+                      ),
+                    ),
+                  );
+                }),
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -431,6 +536,70 @@ class _EpubViewState extends State<EpubView> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.enableNavigationBar) {
+      return MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => ReaderSettingCubit()),
+        ],
+        child: SafeArea(
+          child: Stack(
+            children: [
+              GestureDetector(
+                onTap: _toggleToolOrAppBar,
+                // onTap: () {},
+                child: BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                  builder: (__, state) {
+                    return Stack(
+                      children: [
+                        Positioned.fill(
+                          top: 0,
+                          child: ColoredBox(
+                            color: state.themeMode.data.backgroundColor,
+                            child: widget.builders.builder(
+                              context,
+                              widget.builders,
+                              _controller.loadingState.value,
+                              _buildLoaded,
+                              _loadingError,
+                            ),
+                          ),
+                        ),
+                        if (isShowToc || isShowThemeSetting)
+                          InkWell(
+                            onTap: isShowToc ? _toggleToc : _toggleThemeSetting,
+                            child: Container(
+                              height: MediaQuery.of(context).size.height,
+                              width: MediaQuery.of(context).size.width,
+                              color: Colors.black.withOpacity(.3),
+                            ),
+                          )
+                      ],
+                    );
+                  },
+                ),
+              ),
+              if (isShowNavigationBar) ...[
+                EpubAppBar(
+                  isOpenToc: isShowToc,
+                  isOpenThemeSetting: isShowThemeSetting,
+                  animation: _appBarAnimation,
+                  onTapToc: _toggleToc,
+                  onTapThemeSetting: _toggleThemeSetting,
+                ),
+                EpubToolbar(
+                  animation: _appBarAnimation,
+                  onPrevious: () {},
+                  onNext: () {},
+                  pageNumberController: pageNumberController,
+                ),
+              ],
+              if (isShowThemeSetting) ThemeSettingPanel(animation: _themeSettingAnimation),
+            ],
+          ),
+        ),
+      );
+    }
+
     return widget.builders.builder(
       context,
       widget.builders,
