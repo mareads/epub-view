@@ -36,7 +36,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Brightness get platformBrightness =>
-      MediaQueryData.fromWindow(WidgetsBinding.instance.window).platformBrightness;
+      MediaQueryData.fromWindow(WidgetsBinding.instance.window)
+          .platformBrightness;
 
   void _setSystemUIOverlayStyle() {
     if (platformBrightness == Brightness.light) {
@@ -103,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     _epubReaderController = EpubController(
-      document: EpubDocument.openAsset('assets/185.epub'),
+      document: EpubDocument.openAsset('assets/967.epub'),
       // epubCfi:
       //     'epubcfi(/6/26[id4]!/4/2/2[id4]/22)', // book.epub Chapter 3 paragraph 10
       // epubCfi:
@@ -141,11 +142,16 @@ class _MyHomePageState extends State<MyHomePage> {
         // ),
         body: EpubView(
           builders: EpubViewBuilders<DefaultBuilderOptions>(
-            options: const DefaultBuilderOptions(
-              textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
-            ),
-            chapterDividerBuilder: (_) => const Divider(),
-          ),
+              options: const DefaultBuilderOptions(
+                textStyle: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
+              ),
+              chapterDividerBuilder: (_) => const Divider(),
+              loaderBuilder: (ctx) {
+                return const CircularProgressIndicator(
+                  color: Colors.blue,
+                );
+              }),
           controller: _epubReaderController,
         ),
       );

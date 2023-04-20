@@ -128,10 +128,10 @@ class EpubController {
           ? _epubViewState!._chapterIndexes[index]
           : 0;
 
-  void _attach(_EpubViewState epubReaderViewState) {
+  Future<void> _attach(_EpubViewState epubReaderViewState) async {
     _epubViewState = epubReaderViewState;
 
-    _loadDocument(document);
+    await _loadDocument(document);
   }
 
   void _detach() {
