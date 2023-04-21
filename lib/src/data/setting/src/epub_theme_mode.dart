@@ -18,9 +18,9 @@ extension ExtensionEpubThemeMode on EpubThemeMode {
       case EpubThemeMode.sepia:
         return ColorTheme.sepiaColorTheme;
       case EpubThemeMode.dark:
-        return ColorTheme.nightGreyColorTheme;
-      case EpubThemeMode.darkened:
         return ColorTheme.nightWhileColorTheme;
+      case EpubThemeMode.darkened:
+        return ColorTheme.nightGreyColorTheme;
       default:
         return ColorTheme.lightColorTheme;
     }

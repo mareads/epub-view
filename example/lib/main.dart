@@ -4,9 +4,7 @@ import 'package:flutter/services.dart' show SystemChrome, SystemUiOverlayStyle;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  HydratedBloc.storage = await HydratedStorage.build(
-    storageDirectory: await getTemporaryDirectory(),
-  );
+  await EpubController.initialize();
   runApp(const MyApp());
 }
 

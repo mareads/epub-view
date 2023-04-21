@@ -14,15 +14,17 @@ import 'package:epub_view/src/providers/cubits/reader_setting_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'widgets/app_bar.dart';
+import 'widgets/epub_contents.dart';
 import 'widgets/theme_setting.dart';
 import 'widgets/toolbar.dart';
 
 export 'package:epubx/epubx.dart' hide Image;
-export 'package:hydrated_bloc/hydrated_bloc.dart';
-export 'package:path_provider/path_provider.dart';
 
 export 'widgets/app_bar.dart';
 export 'widgets/theme_setting.dart';
@@ -89,8 +91,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
   late final AnimationController _appBarAnimationController;
   late final Animation<double> _appBarAnimation;
-  late AnimationController _tocAnimationController;
-  late Animation<Offset> _tocAnimation;
   late final AnimationController _themeSettingAnimationController;
   late final Animation<double> _themeSettingAnimation;
   late StreamController<int> pageNumberController;
@@ -129,18 +129,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       curve: Curves.linear,
     ));
 
-    _tocAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 100),
-      vsync: this,
-    );
-    _tocAnimation = Tween<Offset>(
-      begin: const Offset(0, -0.3),
-      end: const Offset(0, 0),
-    ).animate(CurvedAnimation(
-      parent: _tocAnimationController,
-      curve: Curves.linear,
-    ));
-
     _themeSettingAnimationController = animationController;
     _themeSettingAnimation = Tween<double>(
       begin: 0.0,
@@ -162,7 +150,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     _itemPositionListener!.itemPositions.removeListener(_changeListener);
     _controller._detach();
     _appBarAnimationController.dispose();
-    _tocAnimationController.dispose();
     _themeSettingAnimationController.dispose();
     super.dispose();
   }
@@ -172,8 +159,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       return true;
     }
     _chapters = parseChapters(_controller._document!);
-    final parseParagraphsResult =
-        parseParagraphs(_chapters, _controller._document!.Content);
+    final parseParagraphsResult = parseParagraphs(_chapters, _controller._document!.Content);
     _paragraphs = parseParagraphsResult.flatParagraphs;
     _chapterIndexes.addAll(parseParagraphsResult.chapterIndexes);
 
@@ -189,8 +175,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   }
 
   void _changeListener() {
-    if (_paragraphs.isEmpty ||
-        _itemPositionListener!.itemPositions.value.isEmpty) {
+    if (_paragraphs.isEmpty || _itemPositionListener!.itemPositions.value.isEmpty) {
       return;
     }
     final position = _itemPositionListener!.itemPositions.value.first;
@@ -271,12 +256,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       return;
     } else {
       final paragraph = _paragraphByIdRef(hrefIdRef);
-      final chapter =
-          paragraph != null ? _chapters[paragraph.chapterIndex] : null;
+      final chapter = paragraph != null ? _chapters[paragraph.chapterIndex] : null;
 
       if (chapter != null && paragraph != null) {
-        final paragraphIndex =
-            _epubCfiReader?.getParagraphIndexByElement(paragraph.element);
+        final paragraphIndex = _epubCfiReader?.getParagraphIndexByElement(paragraph.element);
         final cfi = _epubCfiReader?.generateCfi(
           book: _controller._document,
           chapter: chapter,
@@ -295,9 +278,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       isShowToc = !isShowToc;
       if (isShowThemeSetting) isShowThemeSetting = false;
     });
-    isShowToc
-        ? _tocAnimationController.forward()
-        : _tocAnimationController.reverse();
   }
 
   void _toggleThemeSetting() {
@@ -310,8 +290,16 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         : _themeSettingAnimationController.reverse();
   }
 
-  void _toggleToolOrAppBar() =>
-      isShowNavigationBar ? _hideAppBar() : _showAppBar();
+  void _toggleToolOrAppBar() {
+    if (isShowNavigationBar) {
+      _hideAppBar();
+    } else {
+      _showAppBar();
+    }
+
+    if (isShowToc) _toggleToc();
+    if (isShowThemeSetting) _toggleThemeSetting();
+  }
 
   void _showAppBar() {
     setState(() => isShowNavigationBar = true);
@@ -323,18 +311,15 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     _appBarAnimationController.forward();
   }
 
-  Paragraph? _paragraphByIdRef(String idRef) =>
-      _paragraphs.firstWhereOrNull((paragraph) {
+  Paragraph? _paragraphByIdRef(String idRef) => _paragraphs.firstWhereOrNull((paragraph) {
         if (paragraph.element.id == idRef) {
           return true;
         }
 
-        return paragraph.element.children.isNotEmpty &&
-            paragraph.element.children[0].id == idRef;
+        return paragraph.element.children.isNotEmpty && paragraph.element.children[0].id == idRef;
       });
 
-  EpubChapter? _chapterByFileName(String? fileName) =>
-      _chapters.firstWhereOrNull((chapter) {
+  EpubChapter? _chapterByFileName(String? fileName) => _chapters.firstWhereOrNull((chapter) {
         if (fileName != null) {
           if (chapter.ContentFileName!.contains(fileName)) {
             return true;
@@ -455,18 +440,15 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                     height: state.lineHeight.value,
                     fontWeight: FontWeight.w300,
                     fontFamily: state.fontFamily.family,
-                    fontSize: state.fontFamily.isJsJindara
-                        ? state.fontSize.dataJs
-                        : state.fontSize.data,
+                    fontSize:
+                        state.fontFamily.isJsJindara ? state.fontSize.dataJs : state.fontSize.data,
                     color: state.themeMode.data.textColor,
                   ),
                 )),
               },
               customRenders: {
-                tagMatcher('img'):
-                    CustomRender.widget(widget: (context, buildChildren) {
-                  final url = context.tree.element!.attributes['src']!
-                      .replaceAll('../', '');
+                tagMatcher('img'): CustomRender.widget(widget: (context, buildChildren) {
+                  final url = context.tree.element!.attributes['src']!.replaceAll('../', '');
                   return Image(
                     image: MemoryImage(
                       Uint8List.fromList(
@@ -559,7 +541,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             children: [
               GestureDetector(
                 onTap: _toggleToolOrAppBar,
-                // onTap: () {},
                 child: BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
                   builder: (ctx, state) {
                     return Stack(
@@ -569,9 +550,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                           child: NotificationListener<ScrollNotification>(
                             onNotification: (scroll) {
                               if (scroll is UserScrollNotification) {
-                                ctx
-                                    .read<ReaderSettingCubit>()
-                                    .onScrollUpdate(scroll);
+                                ctx.read<ReaderSettingCubit>().onScrollUpdate(scroll);
                               }
 
                               return false;
@@ -602,20 +581,30 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                   },
                 ),
               ),
-              EpubAppBar(
-                isOpenToc: isShowToc,
-                isOpenThemeSetting: isShowThemeSetting,
-                animation: _appBarAnimation,
-                onTapToc: _toggleToc,
-                onTapThemeSetting: _toggleThemeSetting,
+              IgnorePointer(
+                ignoring: !isShowNavigationBar,
+                child: EpubAppBar(
+                  isOpenToc: isShowToc,
+                  isOpenThemeSetting: isShowThemeSetting,
+                  animation: _appBarAnimation,
+                  onTapToc: _toggleToc,
+                  onTapThemeSetting: _toggleThemeSetting,
+                ),
               ),
-              EpubToolbar(
-                animation: _appBarAnimation,
-                onPrevious: () {},
-                onNext: () {},
+              IgnorePointer(
+                ignoring: !isShowNavigationBar,
+                child: EpubToolbar(
+                  animation: _appBarAnimation,
+                  onPrevious: () {},
+                  onNext: () {},
+                ),
               ),
-              if (isShowThemeSetting)
-                ThemeSettingPanel(animation: _themeSettingAnimation),
+              if (isShowThemeSetting) ThemeSettingPanel(animation: _themeSettingAnimation),
+              if (isShowToc)
+                Padding(
+                  padding: const EdgeInsets.only(top: kToolbarHeight),
+                  child: EpubViewContents(controller: _controller),
+                ),
             ],
           ),
         ),
