@@ -6,6 +6,14 @@ class EpubController {
     this.epubCfi,
   }) : readerSettingController = ReaderSettingCubit();
 
+  static Future<void> initialize() async {
+    HydratedBloc.storage = await HydratedStorage.build(
+      storageDirectory: await getTemporaryDirectory(),
+    );
+
+    await Hive.initFlutter();
+  }
+
   Future<EpubBook> document;
   final String? epubCfi;
   final ReaderSettingCubit readerSettingController;

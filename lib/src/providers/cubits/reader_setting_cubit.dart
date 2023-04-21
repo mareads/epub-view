@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:epub_view/src/data/setting/theme_setting.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
@@ -31,7 +29,7 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
     final fontSize = EpubFontSize.values.byName(json['fontSizeKey']);
     final lineHeight = EpubLineHeight.from(json['lineHeightKey'] as String);
 
-    throw ReaderSettingState(
+    return ReaderSettingState(
       themeMode: themeMode,
       fontFamily: fontFamily,
       fontSize: fontSize,
