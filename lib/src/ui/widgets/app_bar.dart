@@ -32,97 +32,103 @@ class EpubAppBar extends StatelessWidget {
       builder: (_, state) {
         return Align(
           alignment: Alignment.topCenter,
-          child: FadeTransition(
-            opacity: animation,
-            child: SizedBox(
-              height: kToolbarHeight,
-              child: AppBar(
-                backgroundColor: state.themeMode.data.backgroundColor,
-                automaticallyImplyLeading: false,
-                elevation: 0,
-                leadingWidth: 0,
-                title: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppNavigatorButton.asset(
-                      icon: "assets/images/back_icon@3x.png",
-                      iconSize: const Size.fromHeight(24),
-                      alignment: Alignment.center,
-                      onTap: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 20),
-                    InkWell(
-                      onTap: onTapToc,
-                      overlayColor: MaterialStateProperty.all(Colors.transparent),
-                      child: Container(
-                        key: tocKey,
-                        width: 128,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: state.themeMode.isLightMode || state.themeMode.isSepiaMode
-                              ? const Color(0xFFF4F4F7)
-                              : const Color(0xff343434),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              "assets/icons/menu_chapter.svg",
-                              color: isOpenToc
-                                  ? Theme.of(context).colorScheme.primary
-                                  : state.themeMode.data.textColor,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              "เลือกตอน",
-                              style: GoogleFonts.sarabun(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w300,
+          child: IgnorePointer(
+            ignoring: animation.value == 1,
+            child: FadeTransition(
+              opacity: animation,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: AppBar(
+                  backgroundColor: state.themeMode.data.backgroundColor,
+                  automaticallyImplyLeading: false,
+                  elevation: 0,
+                  leadingWidth: 0,
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppNavigatorButton.asset(
+                        icon: "assets/images/back_icon@3x.png",
+                        iconSize: const Size.fromHeight(24),
+                        alignment: Alignment.center,
+                        onTap: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 20),
+                      InkWell(
+                        onTap: onTapToc,
+                        overlayColor:
+                            MaterialStateProperty.all(Colors.transparent),
+                        child: Container(
+                          key: tocKey,
+                          width: 128,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: state.themeMode.isLightMode ||
+                                    state.themeMode.isSepiaMode
+                                ? const Color(0xFFF4F4F7)
+                                : const Color(0xff343434),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                "assets/icons/menu_chapter.svg",
                                 color: isOpenToc
                                     ? Theme.of(context).colorScheme.primary
                                     : state.themeMode.data.textColor,
                               ),
-                            )
-                          ],
+                              const SizedBox(width: 5),
+                              Text(
+                                "เลือกตอน",
+                                style: GoogleFonts.sarabun(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w300,
+                                  color: isOpenToc
+                                      ? Theme.of(context).colorScheme.primary
+                                      : state.themeMode.data.textColor,
+                                ),
+                              )
+                            ],
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                  actions: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          key: themeSettingKey,
+                          onTap: onTapThemeSetting,
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: state.themeMode.isLightMode ||
+                                      state.themeMode.isSepiaMode
+                                  ? const Color(0xFFF4F4F7)
+                                  : const Color(0xff343434),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            alignment: Alignment.center,
+                            child: Image.asset(
+                              isOpenThemeSetting
+                                  ? 'assets/images/theme_setting_blue@3x.png'
+                                  : 'assets/images/theme_setting_black@3x.png',
+                              height: 24,
+                              color: isOpenThemeSetting
+                                  ? Theme.of(context).colorScheme.primary
+                                  : state.themeMode.data.textColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20)
+                      ],
                     ),
                   ],
                 ),
-                actions: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        key: themeSettingKey,
-                        onTap: onTapThemeSetting,
-                        child: Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: state.themeMode.isLightMode || state.themeMode.isSepiaMode
-                                ? const Color(0xFFF4F4F7)
-                                : const Color(0xff343434),
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          alignment: Alignment.center,
-                          child: Image.asset(
-                            isOpenThemeSetting
-                                ? 'assets/images/theme_setting_blue@3x.png'
-                                : 'assets/images/theme_setting_black@3x.png',
-                            height: 24,
-                            color: isOpenThemeSetting
-                                ? Theme.of(context).colorScheme.primary
-                                : state.themeMode.data.textColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 20)
-                    ],
-                  ),
-                ],
               ),
             ),
           ),

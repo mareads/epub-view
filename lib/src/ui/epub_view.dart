@@ -450,9 +450,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               style: {
                 'html': Style(
                   padding: options.paragraphPadding as EdgeInsets?,
-                  lineHeight: LineHeight(state.lineHeight.value),
                 ).merge(Style.fromTextStyle(
                   TextStyle(
+                    height: state.lineHeight.value,
                     fontWeight: FontWeight.w300,
                     fontFamily: state.fontFamily.family,
                     fontSize: state.fontFamily.isJsJindara
