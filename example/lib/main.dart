@@ -141,6 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
         body: EpubView(
           builders: EpubViewBuilders<DefaultBuilderOptions>(
               options: const DefaultBuilderOptions(
+                paragraphPadding: EdgeInsets.symmetric(vertical: 10,horizontal: 10),
                 textStyle: TextStyle(
                     fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
               ),

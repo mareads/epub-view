@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:typed_data';
+import 'dart:ui';
 
+import 'package:html/dom.dart' as dom;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epub_view/src/data/epub_cfi_reader.dart';
 import 'package:epub_view/src/data/epub_parser.dart';
@@ -76,6 +79,7 @@ class EpubView extends StatefulWidget {
 
 class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   Exception? _loadingError;
+
   ItemScrollController? _itemScrollController;
   ItemPositionsListener? _itemPositionListener;
   List<EpubChapter> _chapters = [];
@@ -83,7 +87,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   EpubCfiReader? _epubCfiReader;
   EpubChapterViewValue? _currentValue;
   final _chapterIndexes = <int>[];
-
+  final _pageController = PageController(
+    initialPage: 0,
+  );
   // Theme/Setting and Progress-Bar
   bool isShowNavigationBar = true;
   bool isShowThemeSetting = false;
@@ -147,6 +153,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _pageController.dispose();
     _itemPositionListener!.itemPositions.removeListener(_changeListener);
     _controller._detach();
     _appBarAnimationController.dispose();
@@ -159,7 +166,8 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       return true;
     }
     _chapters = parseChapters(_controller._document!);
-    final parseParagraphsResult = parseParagraphs(_chapters, _controller._document!.Content);
+    final parseParagraphsResult =
+        parseParagraphs(_chapters, _controller._document!.Content);
     _paragraphs = parseParagraphsResult.flatParagraphs;
     _chapterIndexes.addAll(parseParagraphsResult.chapterIndexes);
 
@@ -175,7 +183,8 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   }
 
   void _changeListener() {
-    if (_paragraphs.isEmpty || _itemPositionListener!.itemPositions.value.isEmpty) {
+    if (_paragraphs.isEmpty ||
+        _itemPositionListener!.itemPositions.value.isEmpty) {
       return;
     }
     final position = _itemPositionListener!.itemPositions.value.first;
@@ -197,6 +206,82 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     );
     _controller.currentValueListenable.value = _currentValue;
     widget.onChapterChanged?.call(_currentValue);
+  }
+
+  List<dom.Element> paragraphsToPagesHandler(List<Paragraph> paragraphs,
+      ReaderSettingState state, EdgeInsetsGeometry padding) {
+    final List<dom.Element> pages = [];
+    final List<InlineSpan> spans = [];
+    final List<String> elements = [];
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double currentPageHeight = 0;
+
+    for (final paragraph in paragraphs) {
+      if (paragraph.element.nodeType == dom.Node.ELEMENT_NODE) {
+        final String text = paragraph.element.text.trim();
+        if (text.isNotEmpty) {
+          final TextSpan span = TextSpan(
+            text: text,
+            style: TextStyle(
+              height: state.lineHeight.value,
+              fontWeight: FontWeight.w300,
+              fontFamily: state.fontFamily.family,
+              fontSize: state.fontFamily.isJsJindara
+                  ? state.fontSize.dataJs
+                  : state.fontSize.data,
+              color: state.themeMode.data.textColor,
+            ),
+          );
+          final TextPainter painter = TextPainter(
+            text: span,
+            textAlign: TextAlign.left,
+            textDirection: TextDirection.ltr,
+          );
+
+          final safeAreaPixel = MediaQuery.of(context).padding.top +
+              MediaQuery.of(context).padding.bottom;
+          final paddingWidth = padding.horizontal * 2;
+          final maxScreenHeight =
+              screenHeight - safeAreaPixel - (padding.vertical * 2);
+
+          painter.layout(maxWidth: screenWidth - paddingWidth);
+          // print("--------");
+          // print("text");
+          // print(span.text);
+          // print("painter lines");
+          // print(painter.computeLineMetrics().length);
+          // print("currentPageHeight");
+          // print(currentPageHeight);
+          // print("maxScreenHeight");
+          // print(maxScreenHeight);
+          // print("--------");
+
+          if (currentPageHeight + painter.height > maxScreenHeight) {
+            // TODO: add this span to new page.
+            pages.add(dom.Element.html(
+                '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+            spans.clear();
+            elements.clear();
+            currentPageHeight = 0;
+          }
+
+          spans.add(span);
+          elements.add('<div>${paragraph.element.text.trim()}</div>');
+          currentPageHeight += painter.height;
+
+          if (paragraph == paragraphs.last) {
+            // TODO: add this span to new page.
+            pages.add(dom.Element.html(
+                '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+            spans.clear();
+            elements.clear();
+            currentPageHeight = 0;
+          }
+        }
+      }
+    }
+    return pages;
   }
 
   void _gotoEpubCfi(
@@ -256,10 +341,12 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       return;
     } else {
       final paragraph = _paragraphByIdRef(hrefIdRef);
-      final chapter = paragraph != null ? _chapters[paragraph.chapterIndex] : null;
+      final chapter =
+          paragraph != null ? _chapters[paragraph.chapterIndex] : null;
 
       if (chapter != null && paragraph != null) {
-        final paragraphIndex = _epubCfiReader?.getParagraphIndexByElement(paragraph.element);
+        final paragraphIndex =
+            _epubCfiReader?.getParagraphIndexByElement(paragraph.element);
         final cfi = _epubCfiReader?.generateCfi(
           book: _controller._document,
           chapter: chapter,
@@ -311,15 +398,18 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     _appBarAnimationController.forward();
   }
 
-  Paragraph? _paragraphByIdRef(String idRef) => _paragraphs.firstWhereOrNull((paragraph) {
+  Paragraph? _paragraphByIdRef(String idRef) =>
+      _paragraphs.firstWhereOrNull((paragraph) {
         if (paragraph.element.id == idRef) {
           return true;
         }
 
-        return paragraph.element.children.isNotEmpty && paragraph.element.children[0].id == idRef;
+        return paragraph.element.children.isNotEmpty &&
+            paragraph.element.children[0].id == idRef;
       });
 
-  EpubChapter? _chapterByFileName(String? fileName) => _chapters.firstWhereOrNull((chapter) {
+  EpubChapter? _chapterByFileName(String? fileName) =>
+      _chapters.firstWhereOrNull((chapter) {
         if (fileName != null) {
           if (chapter.ContentFileName!.contains(fileName)) {
             return true;
@@ -440,15 +530,18 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                     height: state.lineHeight.value,
                     fontWeight: FontWeight.w300,
                     fontFamily: state.fontFamily.family,
-                    fontSize:
-                        state.fontFamily.isJsJindara ? state.fontSize.dataJs : state.fontSize.data,
+                    fontSize: state.fontFamily.isJsJindara
+                        ? state.fontSize.dataJs
+                        : state.fontSize.data,
                     color: state.themeMode.data.textColor,
                   ),
                 )),
               },
               customRenders: {
-                tagMatcher('img'): CustomRender.widget(widget: (context, buildChildren) {
-                  final url = context.tree.element!.attributes['src']!.replaceAll('../', '');
+                tagMatcher('img'):
+                    CustomRender.widget(widget: (context, buildChildren) {
+                  final url = context.tree.element!.attributes['src']!
+                      .replaceAll('../', '');
                   return Image(
                     image: MemoryImage(
                       Uint8List.fromList(
@@ -486,6 +579,64 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         );
       },
     );
+  }
+
+  Widget _buildLoadedHorizontal(BuildContext ctx) {
+    return BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+      builder: (ctx, state) {
+        final defaultBuilder =
+            widget.builders as EpubViewBuilders<DefaultBuilderOptions>;
+        DefaultBuilderOptions options = defaultBuilder.options;
+        final padding = options.paragraphPadding;
+        List<dom.Element> pages =
+            paragraphsToPagesHandler(_paragraphs, state, padding);
+        return PageView(
+          controller: _pageController,
+          children: pages
+              .map(
+                (element) => Padding(
+                  padding: padding,
+                  child: Center(
+                    child: Html(
+                      data: element.outerHtml,
+                      // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+                      style: {
+                        'html': Style().merge(Style.fromTextStyle(
+                          TextStyle(
+                            height: state.lineHeight.value,
+                            fontWeight: FontWeight.w300,
+                            fontFamily: state.fontFamily.family,
+                            fontSize: state.fontFamily.isJsJindara
+                                ? state.fontSize.dataJs
+                                : state.fontSize.data,
+                            color: state.themeMode.data.textColor,
+                          ),
+                        )),
+                      },
+                      customRenders: {
+                        tagMatcher('img'): CustomRender.widget(
+                            widget: (context, buildChildren) {
+                          final url = context.tree.element!.attributes['src']!
+                              .replaceAll('../', '');
+                          return Image(
+                            image: MemoryImage(
+                              Uint8List.fromList(
+                                widget.controller._document!.Content!
+                                    .Images![url]!.Content!,
+                              ),
+                            ),
+                          );
+                        }),
+                      },
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+    // return Container();
   }
 
   static Widget _builder(
@@ -550,7 +701,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                           child: NotificationListener<ScrollNotification>(
                             onNotification: (scroll) {
                               if (scroll is UserScrollNotification) {
-                                ctx.read<ReaderSettingCubit>().onScrollUpdate(scroll);
+                                ctx
+                                    .read<ReaderSettingCubit>()
+                                    .onScrollUpdate(scroll);
                               }
 
                               return false;
@@ -561,7 +714,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                 context,
                                 widget.builders,
                                 _controller.loadingState.value,
-                                _buildLoaded,
+                                _buildLoadedHorizontal,
                                 _loadingError,
                               ),
                             ),
@@ -599,7 +752,8 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                   onNext: () {},
                 ),
               ),
-              if (isShowThemeSetting) ThemeSettingPanel(animation: _themeSettingAnimation),
+              if (isShowThemeSetting)
+                ThemeSettingPanel(animation: _themeSettingAnimation),
               if (isShowToc)
                 Padding(
                   padding: const EdgeInsets.only(top: kToolbarHeight),
