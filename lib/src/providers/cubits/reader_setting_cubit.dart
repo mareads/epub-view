@@ -1,8 +1,12 @@
 import 'package:epub_view/src/data/setting/theme_setting.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import 'package:hydrated_bloc/hydrated_bloc.dart';
+
+import '../../data/setting/src/reader_mode.dart';
 
 class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
   ReaderSettingCubit() : super(const ReaderSettingState.init());
@@ -21,6 +25,36 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
 
   void onLineHeightChanged(EpubLineHeight lineHeight) =>
       emit(state.copyWith(lineHeight: lineHeight));
+
+  void onReaderModeChanged(ReaderMode readerMode) {
+    emit(state.copyWith(readerMode: readerMode));
+
+    onScrollUpdate(UserScrollNotification(
+        direction: ScrollDirection.forward,
+        metrics: state.scrollNotification!.metrics
+            .copyWith(pixels: 0, maxScrollExtent: 100),
+        context: state.scrollNotification!.context!));
+  }
+
+  Color getBackgroundColor(
+      {required BuildContext context, required bool isSelected}) {
+    return state.themeMode.isDarkenedMode
+        ? isSelected
+            ? Theme.of(context).colorScheme.primary.withOpacity(.3)
+            : state.themeMode.data.buttonBackgroundColor
+        : state.themeMode.data.buttonBackgroundColor;
+  }
+
+  Color? getIconColor(
+      {required BuildContext context, required bool isSelected}) {
+    return isSelected
+        ? state.themeMode.isDarkenedMode
+            ? Theme.of(context).colorScheme.secondary
+            : null
+        : state.themeMode.isDarkMode
+            ? const Color(0xff0c1135)
+            : state.themeMode.data.textColor;
+  }
 
   @override
   ReaderSettingState? fromJson(Map<String, dynamic> json) {
@@ -52,12 +86,14 @@ class ReaderSettingState extends Equatable {
   final EpubFontFamily fontFamily;
   final EpubFontSize fontSize;
   final EpubLineHeight lineHeight;
+  final ReaderMode readerMode;
 
   const ReaderSettingState.init({
     this.themeMode = EpubThemeMode.light,
     this.scrollNotification,
     this.fontFamily = EpubFontFamily.sarabun,
     this.fontSize = EpubFontSize.medium,
+    this.readerMode = ReaderMode.vertical,
     this.lineHeight = EpubLineHeight.factor_1_5,
   });
 
@@ -66,6 +102,7 @@ class ReaderSettingState extends Equatable {
     this.scrollNotification,
     this.fontFamily = EpubFontFamily.sarabun,
     this.fontSize = EpubFontSize.medium,
+    this.readerMode = ReaderMode.vertical,
     this.lineHeight = EpubLineHeight.factor_1_5,
   });
 
@@ -86,9 +123,11 @@ class ReaderSettingState extends Equatable {
     EpubFontSize? fontSize,
     EpubLineHeight? lineHeight,
     UserScrollNotification? scrollNotification,
+    ReaderMode? readerMode,
   }) =>
       ReaderSettingState(
         themeMode: themeMode ?? this.themeMode,
+        readerMode: readerMode ?? this.readerMode,
         scrollNotification: scrollNotification ?? this.scrollNotification,
         fontFamily: fontFamily ?? this.fontFamily,
         fontSize: fontSize ?? this.fontSize,
@@ -96,6 +135,12 @@ class ReaderSettingState extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [themeMode, fontFamily, fontSize, lineHeight, scrollNotification];
+  List<Object?> get props => [
+        themeMode,
+        fontFamily,
+        fontSize,
+        lineHeight,
+        scrollNotification,
+        readerMode
+      ];
 }

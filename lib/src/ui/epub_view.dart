@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:epub_view/src/data/setting/src/reader_mode.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epub_view/src/data/epub_cfi_reader.dart';
@@ -714,7 +715,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                 context,
                                 widget.builders,
                                 _controller.loadingState.value,
-                                _buildLoadedHorizontal,
+                                state.readerMode.isHorizontal
+                                    ? _buildLoadedHorizontal
+                                    : _buildLoaded,
                                 _loadingError,
                               ),
                             ),

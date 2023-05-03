@@ -1,5 +1,6 @@
 import 'package:epub_view/src/data/setting/src/epub_theme_mode.dart';
 import 'package:epub_view/src/providers/cubits/reader_setting_cubit.dart';
+import 'package:epub_view/src/ui/widgets/theme_and_setting/reader_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,7 +13,8 @@ import 'theme_and_setting/line_height.dart';
 import 'theme_and_setting/theme_mode.dart';
 
 class ThemeSettingPanel extends StatefulWidget {
-  const ThemeSettingPanel({Key? key, required this.animation}) : super(key: key);
+  const ThemeSettingPanel({Key? key, required this.animation})
+      : super(key: key);
 
   final Animation<double> animation;
 
@@ -75,17 +77,18 @@ class _ThemeSettingPanelState extends State<ThemeSettingPanel> {
             ),
             child: Container(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height - (kToolbarHeight * 2 + 108),
+                maxHeight: MediaQuery.of(context).size.height -
+                    (kToolbarHeight * 2 + 78),
               ),
               decoration: BoxDecoration(
-                border:
-                    Border(top: BorderSide(color: state.themeMode.data.borderColor)),
+                border: Border(
+                    top: BorderSide(color: state.themeMode.data.borderColor)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const BouncingScrollPhysics(),
-                itemCount: 5,
+                itemCount: 6,
                 itemBuilder: (_, i) => [
                   BrightnessSettingWidget(
                     themeMode: state.themeMode,
@@ -96,6 +99,7 @@ class _ThemeSettingPanelState extends State<ThemeSettingPanel> {
                   const FontsStyleWidget(),
                   const FontsSizeWidget(),
                   const LineHeightWidget(),
+                  const ReaderTypeWidget(),
                 ][i],
                 separatorBuilder: (_, __) =>
                     _Spacing(dividerColor: state.themeMode.data.dividerColor),
