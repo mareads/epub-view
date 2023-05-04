@@ -12,7 +12,7 @@ class LineHeightWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("ระยะห่างระหว่างบันทัด"),
+        const Text("ระยะห่างระหว่างบรรทัด"),
         const SizedBox(height: 8),
         BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
           bloc: context.read<ReaderSettingCubit>(),
@@ -20,27 +20,25 @@ class LineHeightWidget extends StatelessWidget {
             return Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.start,
-              children: EpubLineHeight.values.asMap().entries.map<Widget>((item) {
+              children:
+                  EpubLineHeight.values.asMap().entries.map<Widget>((item) {
                 bool isSelected = state.lineHeight.type == item.value.type;
-                Color backgroundColor = state.themeMode.isDarkenedMode
-                    ? isSelected
-                        ? Theme.of(context).colorScheme.primary.withOpacity(.3)
-                        : state.themeMode.data.buttonBackgroundColor
-                    : state.themeMode.data.buttonBackgroundColor;
-                Color? iconColor = isSelected
-                    ? state.themeMode.isDarkenedMode
-                        ? Theme.of(context).colorScheme.secondary
-                        : null
-                    : state.themeMode.isDarkMode
-                        ? const Color(0xff0c1135)
-                        : state.themeMode.data.textColor;
+                Color backgroundColor = context
+                    .read<ReaderSettingCubit>()
+                    .getBackgroundColor(
+                        context: context, isSelected: isSelected);
+                Color? iconColor = context
+                    .read<ReaderSettingCubit>()
+                    .getIconColor(context: context, isSelected: isSelected);
 
                 return Opacity(
                   opacity: isSelected ? 1 : .6,
                   child: GestureDetector(
                     onTap: () {
                       if (isSelected) return;
-                      context.read<ReaderSettingCubit>().onLineHeightChanged(item.value);
+                      context
+                          .read<ReaderSettingCubit>()
+                          .onLineHeightChanged(item.value);
                     },
                     child: Container(
                       width: 30,
