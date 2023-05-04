@@ -91,6 +91,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   final _pageController = PageController(
     initialPage: 0,
   );
+  final List<int> _chapterPageList = [0];
   // Theme/Setting and Progress-Bar
   bool isShowNavigationBar = true;
   bool isShowThemeSetting = false;
@@ -107,6 +108,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _pageController.addListener(_pageViewChangeListener);
     _itemScrollController = ItemScrollController();
     _itemPositionListener = ItemPositionsListener.create();
     _controller._attach(this);
@@ -183,6 +185,29 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     return true;
   }
 
+  void _pageViewChangeListener() {
+    final page = _pageController.page?.floor();
+    if (page == _pageController.page) {
+      int countIndex = 0;
+      final chapterIndex = _chapterPageList.fold<int>(0, (all, sum) {
+        int chapterIndex = page! >= sum ? countIndex : all;
+        countIndex++;
+        return chapterIndex;
+      });
+      final position = _itemPositionListener!.itemPositions.value.first;
+      _currentValue = EpubChapterViewValue(
+        onHorizontalPageChange: onHorizontalPageChange,
+        chapter: chapterIndex >= 0 ? _chapters[chapterIndex] : null,
+        chapterNumber: chapterIndex + 1,
+        paragraphNumber: 0,
+        position: position,
+      );
+
+      _controller.currentValueListenable.value = _currentValue;
+      widget.onChapterChanged?.call(_currentValue);
+    }
+  }
+
   void _changeListener() {
     if (_paragraphs.isEmpty ||
         _itemPositionListener!.itemPositions.value.isEmpty) {
@@ -200,20 +225,35 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       leadingEdge: position.itemLeadingEdge,
     );
     _currentValue = EpubChapterViewValue(
+      onHorizontalPageChange: onHorizontalPageChange,
       chapter: chapterIndex >= 0 ? _chapters[chapterIndex] : null,
       chapterNumber: chapterIndex + 1,
       paragraphNumber: paragraphIndex + 1,
       position: position,
     );
+
     _controller.currentValueListenable.value = _currentValue;
     widget.onChapterChanged?.call(_currentValue);
   }
 
+  void onHorizontalPageChange({required int chapterId}) {
+    _pageController.animateToPage(
+      _chapterPageList[chapterId],
+      curve: Curves.easeIn,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
   List<dom.Element> paragraphsToPagesHandler(List<Paragraph> paragraphs,
       ReaderSettingState state, EdgeInsetsGeometry padding) {
+    /// reset for each run
+    _chapterPageList.clear();
+    _chapterPageList.add(0);
+
     final List<dom.Element> pages = [];
     final List<InlineSpan> spans = [];
     final List<String> elements = [];
+    int currentChapter = 0;
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     double currentPageHeight = 0;
@@ -258,27 +298,31 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           // print(maxScreenHeight);
           // print("--------");
 
-          if (currentPageHeight + painter.height > maxScreenHeight) {
-            // TODO: add this span to new page.
+          final isNewChapter = currentChapter != paragraph.chapterIndex;
+
+          if ((currentPageHeight + painter.height > maxScreenHeight) ||
+              isNewChapter) {
+            pages.add(dom.Element.html(
+                '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+            spans.clear();
+            elements.clear();
+            currentPageHeight = 0;
+            if (isNewChapter) {
+              _chapterPageList.add(pages.length);
+            }
+          }
+
+          if (paragraph == paragraphs.last) {
             pages.add(dom.Element.html(
                 '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
             spans.clear();
             elements.clear();
             currentPageHeight = 0;
           }
-
           spans.add(span);
           elements.add('<div>${paragraph.element.text.trim()}</div>');
           currentPageHeight += painter.height;
-
-          if (paragraph == paragraphs.last) {
-            // TODO: add this span to new page.
-            pages.add(dom.Element.html(
-                '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
-            spans.clear();
-            elements.clear();
-            currentPageHeight = 0;
-          }
+          currentChapter = paragraph.chapterIndex;
         }
       }
     }

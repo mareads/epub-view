@@ -7,12 +7,14 @@ class EpubChapterViewValue {
   const EpubChapterViewValue({
     required this.chapter,
     required this.chapterNumber,
+    required this.onHorizontalPageChange,
     required this.paragraphNumber,
     required this.position,
   });
 
   final EpubChapter? chapter;
   final int chapterNumber;
+  final void Function({required int chapterId}) onHorizontalPageChange;
   final int paragraphNumber;
   final ItemPosition position;
 

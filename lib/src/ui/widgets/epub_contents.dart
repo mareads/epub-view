@@ -2,8 +2,10 @@ import 'package:epub_view/epub_view.dart';
 import 'package:epub_view/src/data/models/chapter.dart';
 import 'package:epub_view/src/data/models/chapter_view_value.dart';
 import 'package:epub_view/src/data/setting/src/epub_theme_mode.dart';
+import 'package:epub_view/src/data/setting/src/reader_mode.dart';
 import 'package:epub_view/src/providers/cubits/reader_setting_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class EpubViewContents extends StatelessWidget {
@@ -18,19 +20,21 @@ class EpubViewContents extends StatelessWidget {
   final ScrollController? scrollController;
   final double contentHeight;
 
-  static final TextStyle _style = GoogleFonts.sarabun(fontSize: 14, fontWeight: FontWeight.w300);
+  static final TextStyle _style =
+      GoogleFonts.sarabun(fontSize: 14, fontWeight: FontWeight.w300);
 
-  ReaderSettingState get readerSettingState => controller.readerSettingController.state;
+  ReaderSettingState get readerSettingState =>
+      controller.readerSettingController.state;
 
-  Color get backgroundColor =>
-      readerSettingState.themeMode.isLightMode || readerSettingState.themeMode.isSepiaMode
-          ? const Color(0xffffffff)
-          : const Color(0xff262626);
+  Color get backgroundColor => readerSettingState.themeMode.isLightMode ||
+          readerSettingState.themeMode.isSepiaMode
+      ? const Color(0xffffffff)
+      : const Color(0xff262626);
 
-  Color get trackColor =>
-      readerSettingState.themeMode.isLightMode || readerSettingState.themeMode.isSepiaMode
-          ? const Color(0xfff4f2ec)
-          : const Color(0xff434343);
+  Color get trackColor => readerSettingState.themeMode.isLightMode ||
+          readerSettingState.themeMode.isSepiaMode
+      ? const Color(0xfff4f2ec)
+      : const Color(0xff434343);
 
   Color get focusBackgroundColor {
     switch (readerSettingState.themeMode.name) {
@@ -49,19 +53,24 @@ class EpubViewContents extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scroll = scrollController ?? ScrollController(debugLabel: "EpubViewContents");
+    final scroll =
+        scrollController ?? ScrollController(debugLabel: "EpubViewContents");
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final index = controller.tableOfContentsListenable.value.indexWhere((element) =>
-          element.title!.trim() ==
-          (controller.currentValueListenable.value?.chapter?.Title?.replaceAll('\n', '').trim() ??
-              ''));
+      final index = controller.tableOfContentsListenable.value.indexWhere(
+          (element) =>
+              element.title!.trim() ==
+              (controller.currentValueListenable.value?.chapter?.Title
+                      ?.replaceAll('\n', '')
+                      .trim() ??
+                  ''));
       scroll.jumpTo(index * contentHeight);
     });
 
     return ValueListenableBuilder<EpubChapterViewValue?>(
       valueListenable: controller.currentValueListenable,
-      builder: (_, chapterData, childA) => ValueListenableBuilder<List<EpubViewChapter>>(
+      builder: (_, chapterData, childA) =>
+          ValueListenableBuilder<List<EpubViewChapter>>(
         valueListenable: controller.tableOfContentsListenable,
         builder: (__, data, childB) {
           Widget content;
@@ -70,7 +79,8 @@ class EpubViewContents extends StatelessWidget {
             content = Theme(
               data: Theme.of(context).copyWith(
                 scrollbarTheme: ScrollbarThemeData(
-                  crossAxisMargin: Theme.of(context).scrollbarTheme.crossAxisMargin,
+                  crossAxisMargin:
+                      Theme.of(context).scrollbarTheme.crossAxisMargin,
                   mainAxisMargin: 2,
                   thumbColor: Theme.of(context).scrollbarTheme.thumbColor,
                   trackColor: MaterialStateProperty.all(trackColor),
@@ -97,23 +107,37 @@ class EpubViewContents extends StatelessWidget {
                       height: contentHeight,
                       child: Material(
                         color: isFocus ? focusBackgroundColor : backgroundColor,
-                        child: ListTile(
-                          horizontalTitleGap: 0,
-                          minVerticalPadding: 0,
-                          visualDensity: const VisualDensity(vertical: -4),
-                          leading: Text("${index + 1}.", style: contentStyle,),
-                          title: Text(
-                            data[index].title!.trim(),
-                            style: contentStyle,
-                          ),
-                          onTap: () async {
-                            await controller.scrollTo(index: data[index].startIndex);
-                            double currentPositions = (index * contentHeight) % 360;
-                            if (currentPositions >= 290) {
-                              scroll.jumpTo(index * contentHeight);
-                            }
-                          },
-                        ),
+                        child:
+                            BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                                builder: (context, state) {
+                          return ListTile(
+                            horizontalTitleGap: 0,
+                            minVerticalPadding: 0,
+                            visualDensity: const VisualDensity(vertical: -4),
+                            leading: Text(
+                              "${index + 1}.",
+                              style: contentStyle,
+                            ),
+                            title: Text(
+                              data[index].title!.trim(),
+                              style: contentStyle,
+                            ),
+                            onTap: () async {
+                              if (state.readerMode.isHorizontal) {
+                                chapterData?.onHorizontalPageChange(
+                                    chapterId: index);
+                              } else {
+                                await controller.scrollTo(
+                                    index: data[index].startIndex);
+                                double currentPositions =
+                                    (index * contentHeight) % 360;
+                                if (currentPositions >= 290) {
+                                  scroll.jumpTo(index * contentHeight);
+                                }
+                              }
+                            },
+                          );
+                        }),
                       ),
                     );
                   },

@@ -28,12 +28,13 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
 
   void onReaderModeChanged(ReaderMode readerMode) {
     emit(state.copyWith(readerMode: readerMode));
-
-    onScrollUpdate(UserScrollNotification(
-        direction: ScrollDirection.forward,
-        metrics: state.scrollNotification!.metrics
-            .copyWith(pixels: 0, maxScrollExtent: 100),
-        context: state.scrollNotification!.context!));
+    if (state.scrollNotification != null) {
+      onScrollUpdate(UserScrollNotification(
+          direction: ScrollDirection.forward,
+          metrics: state.scrollNotification!.metrics
+              .copyWith(pixels: 0, maxScrollExtent: 100),
+          context: state.scrollNotification!.context!));
+    }
   }
 
   Color getBackgroundColor(
