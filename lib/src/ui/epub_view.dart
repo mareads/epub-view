@@ -25,6 +25,10 @@ import 'widgets/theme_setting.dart';
 import 'widgets/toolbar.dart';
 
 export 'package:epubx/epubx.dart' hide Image;
+export 'package:hive/hive.dart';
+export 'package:hive_flutter/hive_flutter.dart';
+export 'package:equatable/equatable.dart';
+export 'package:path_provider/path_provider.dart';
 
 export 'widgets/app_bar.dart';
 export 'widgets/theme_setting.dart';

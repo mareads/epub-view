@@ -1,10 +1,16 @@
 import 'package:epub_view/epub_view.dart';
+import 'package:epub_view_example/bloc/epub_manager_bloc.dart';
+import 'package:epub_view_example/epub_list.dart';
+import 'package:epub_view_example/service/hive/hive_service.dart';
+import 'package:epub_view_example/service/local_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, SystemUiOverlayStyle;
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EpubController.initialize();
+  await HiveService().initialize();
   runApp(const MyApp());
 }
 
@@ -34,8 +40,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Brightness get platformBrightness =>
-      MediaQueryData.fromWindow(WidgetsBinding.instance.window)
-          .platformBrightness;
+      MediaQueryData.fromWindow(WidgetsBinding.instance.window).platformBrightness;
 
   void _setSystemUIOverlayStyle() {
     if (platformBrightness == Brightness.light) {
@@ -56,66 +61,44 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        title: 'Epub demo',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          scrollbarTheme: ScrollbarThemeData(
-            crossAxisMargin: 2,
-            mainAxisMargin: 0,
-            minThumbLength: 20,
-            thickness: MaterialStateProperty.all(6),
-            thumbVisibility: MaterialStateProperty.all(true),
-            thumbColor: MaterialStateProperty.all(const Color(0xFF3f54d9)),
-            radius: const Radius.circular(5),
-            trackColor: MaterialStateProperty.all(const Color(0xfff4f4f7)),
-            trackVisibility: MaterialStateProperty.all(true),
-            trackBorderColor: MaterialStateProperty.all(Colors.transparent),
-            interactive: true,
+  Widget build(BuildContext context) => BlocProvider(
+        create: (context) => EpubManagerBloc(),
+        child: MaterialApp(
+          title: 'Epub demo',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            scrollbarTheme: ScrollbarThemeData(
+              crossAxisMargin: 2,
+              mainAxisMargin: 0,
+              minThumbLength: 20,
+              thickness: MaterialStateProperty.all(6),
+              thumbVisibility: MaterialStateProperty.all(true),
+              thumbColor: MaterialStateProperty.all(const Color(0xFF3f54d9)),
+              radius: const Radius.circular(5),
+              trackColor: MaterialStateProperty.all(const Color(0xfff4f4f7)),
+              trackVisibility: MaterialStateProperty.all(true),
+              trackBorderColor: MaterialStateProperty.all(Colors.transparent),
+              interactive: true,
+            ),
+            colorScheme: const ColorScheme.light().copyWith(
+              primary: const Color(0xFF3F54D9),
+              secondary: const Color(0xFF3F54D9).withOpacity(.6),
+              primaryContainer: const Color(0xFFffffff),
+              background: const Color(0xff0c1135),
+            ),
           ),
-          colorScheme: const ColorScheme.light().copyWith(
-            primary: const Color(0xFF3F54D9),
-            secondary: const Color(0xFF3F54D9).withOpacity(.6),
-            primaryContainer: const Color(0xFFffffff),
-            background: const Color(0xff0c1135),
+          darkTheme: ThemeData(
+            primarySwatch: Colors.blue,
+            brightness: Brightness.dark,
           ),
+          debugShowCheckedModeBanner: false,
+          home: const MyHomePage(),
         ),
-        darkTheme: ThemeData(
-          primarySwatch: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        debugShowCheckedModeBanner: false,
-        home: const MyHomePage(),
       );
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatelessWidget {
   const MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  late EpubController _epubReaderController;
-
-  @override
-  void initState() {
-    _epubReaderController = EpubController(
-      document: EpubDocument.openAsset('assets/967.epub'),
-      // epubCfi:
-      //     'epubcfi(/6/26[id4]!/4/2/2[id4]/22)', // book.epub Chapter 3 paragraph 10
-      // epubCfi:
-      //     'epubcfi(/6/6[chapter-2]!/4/2/1612)', // book_2.epub Chapter 16 paragraph 3
-    );
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _epubReaderController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -138,37 +121,37 @@ class _MyHomePageState extends State<MyHomePage> {
         // drawer: Drawer(
         //   child: EpubViewTableOfContents(controller: _epubReaderController),
         // ),
-        body: EpubView(
-          builders: EpubViewBuilders<DefaultBuilderOptions>(
-              options: const DefaultBuilderOptions(
-                textStyle: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
-              ),
-              chapterDividerBuilder: (_) => const Divider(),
-              loaderBuilder: (ctx) {
-                return const CircularProgressIndicator(
-                  color: Colors.blue,
-                );
-              }),
-          controller: _epubReaderController,
+        // body: EpubView(
+        //   builders: EpubViewBuilders<DefaultBuilderOptions>(
+        //       options: const DefaultBuilderOptions(
+        //         textStyle: TextStyle(
+        //             fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
+        //       ),
+        //       chapterDividerBuilder: (_) => const Divider(),
+        //       loaderBuilder: (ctx) {
+        //         return const CircularProgressIndicator(
+        //           color: Colors.blue,
+        //         );
+        //       }),
+        //   controller: _epubReaderController,
+        // ),
+        body: BlocBuilder<EpubManagerBloc, EpubManagerState>(
+          bloc: context.read<EpubManagerBloc>()..add(FetchEpubBooksEvent()),
+          builder: (_, EpubManagerState state) {
+            if (state.status.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state.status.isSuccess && state.ePubs.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return EpubListScreen(
+              mapPercentDownload: state.downloadPercent,
+              mapPercentDelete: state.removePercent,
+              data: state.ePubs,
+            );
+          },
         ),
       );
-
-  void _showCurrentEpubCfi(context) {
-    final cfi = _epubReaderController.generateEpubCfi();
-
-    if (cfi != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(cfi),
-          action: SnackBarAction(
-            label: 'GO',
-            onPressed: () {
-              _epubReaderController.gotoEpubCfi(cfi);
-            },
-          ),
-        ),
-      );
-    }
-  }
 }
