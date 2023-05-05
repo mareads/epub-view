@@ -20,3 +20,10 @@ class RemoveEpubBookEvent extends EpubManagerEvent {
 
   RemoveEpubBookEvent({required this.ePubName, required this.id});
 }
+
+class UpdateEpubBookEvent extends EpubManagerEvent {
+  final int ePubId;
+  final Function? onSuccess;
+
+  UpdateEpubBookEvent({required this.ePubId, this.onSuccess});
+}
