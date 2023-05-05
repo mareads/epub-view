@@ -264,17 +264,23 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
     for (final paragraph in paragraphs) {
       if (paragraph.element.nodeType == dom.Node.ELEMENT_NODE) {
+        const indentCount = 8;
+        final indentDartString = " " * indentCount;
+        final indentHtmlString = "&nbsp;" * indentCount;
         final String text = paragraph.element.text.trim();
         if (text.isNotEmpty) {
+          final isNewChapter = currentChapter != paragraph.chapterIndex;
+
+          final fontSize = state.fontFamily.isJsJindara
+              ? state.fontSize.dataJs
+              : state.fontSize.data;
           final TextSpan span = TextSpan(
-            text: text,
+            text: isNewChapter ? text : "$indentDartString$text",
             style: TextStyle(
               height: state.lineHeight.value,
               fontWeight: FontWeight.w300,
               fontFamily: state.fontFamily.family,
-              fontSize: state.fontFamily.isJsJindara
-                  ? state.fontSize.dataJs
-                  : state.fontSize.data,
+              fontSize: fontSize,
               color: state.themeMode.data.textColor,
             ),
           );
@@ -302,9 +308,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           // print(maxScreenHeight);
           // print("--------");
 
-          final isNewChapter = currentChapter != paragraph.chapterIndex;
+          /// add paragraph margin spacing to calculate formular
+          final paintHeight = painter.height + fontSize * 2;
 
-          if ((currentPageHeight + painter.height > maxScreenHeight) ||
+          if ((currentPageHeight + paintHeight > maxScreenHeight) ||
               isNewChapter) {
             pages.add(dom.Element.html(
                 '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
@@ -324,8 +331,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             currentPageHeight = 0;
           }
           spans.add(span);
-          elements.add('<div>${paragraph.element.text.trim()}</div>');
-          currentPageHeight += painter.height;
+          elements.add(paragraph.element.outerHtml
+              .replaceFirst('<p>', '<p>$indentHtmlString'));
+          // debugger();
+          currentPageHeight += paintHeight;
           currentChapter = paragraph.chapterIndex;
         }
       }
@@ -639,6 +648,16 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         final padding = options.paragraphPadding;
         List<dom.Element> pages =
             paragraphsToPagesHandler(_paragraphs, state, padding);
+        final headerFontStyle = Style().merge(Style.fromTextStyle(
+          TextStyle(
+            height: state.lineHeight.value,
+            fontFamily: state.fontFamily.family,
+            fontSize: state.fontFamily.isJsJindara
+                ? state.fontSize.dataJs
+                : state.fontSize.data,
+            color: state.themeMode.data.textColor,
+          ),
+        ));
         return PageView(
           controller: _pageController,
           children: pages
@@ -650,6 +669,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                       data: element.outerHtml,
                       // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
                       style: {
+                        'h1': headerFontStyle,
+                        'h2': headerFontStyle,
+                        'h3': headerFontStyle,
+                        'h4': headerFontStyle,
                         'html': Style().merge(Style.fromTextStyle(
                           TextStyle(
                             height: state.lineHeight.value,
