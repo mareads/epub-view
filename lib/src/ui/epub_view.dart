@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:epub_view/src/data/setting/src/reader_mode.dart';
+import 'package:epub_view/src/ui/reader_section.dart';
+import 'package:epub_view/src/ui/widgets/epub_contents.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epub_view/src/data/epub_cfi_reader.dart';
@@ -24,7 +24,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import 'widgets/app_bar.dart';
-import 'widgets/epub_contents.dart';
 import 'widgets/theme_setting.dart';
 import 'widgets/toolbar.dart';
 
@@ -58,14 +57,12 @@ class EpubView extends StatefulWidget {
       options: DefaultBuilderOptions(),
     ),
     this.shrinkWrap = false,
-    this.enableNavigationBar = true,
     Key? key,
   }) : super(key: key);
 
   final EpubController controller;
   final ExternalLinkPressed? onExternalLinkPressed;
   final bool shrinkWrap;
-  final bool enableNavigationBar;
 
   final void Function(EpubChapterViewValue? value)? onChapterChanged;
 
@@ -97,9 +94,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   );
   final List<int> _chapterPageList = [0];
   // Theme/Setting and Progress-Bar
-  bool isShowNavigationBar = true;
-  bool isShowThemeSetting = false;
-  bool isShowToc = false;
 
   late final AnimationController _appBarAnimationController;
   late final Animation<double> _appBarAnimation;
@@ -418,44 +412,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     }
   }
 
-  void _toggleToc() {
-    setState(() {
-      isShowToc = !isShowToc;
-      if (isShowThemeSetting) isShowThemeSetting = false;
-    });
-  }
-
-  void _toggleThemeSetting() {
-    setState(() {
-      isShowThemeSetting = !isShowThemeSetting;
-      if (isShowToc) isShowToc = false;
-    });
-    isShowThemeSetting
-        ? _themeSettingAnimationController.forward()
-        : _themeSettingAnimationController.reverse();
-  }
-
-  void _toggleToolOrAppBar() {
-    if (isShowNavigationBar) {
-      _hideAppBar();
-    } else {
-      _showAppBar();
-    }
-
-    if (isShowToc) _toggleToc();
-    if (isShowThemeSetting) _toggleThemeSetting();
-  }
-
-  void _showAppBar() {
-    setState(() => isShowNavigationBar = true);
-    _appBarAnimationController.reverse();
-  }
-
-  void _hideAppBar() {
-    setState(() => isShowNavigationBar = false);
-    _appBarAnimationController.forward();
-  }
-
   Paragraph? _paragraphByIdRef(String idRef) =>
       _paragraphs.firstWhereOrNull((paragraph) {
         if (paragraph.element.id == idRef) {
@@ -641,6 +597,12 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
   Widget _buildLoadedHorizontal(BuildContext ctx) {
     return BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+      buildWhen: (prev, cur) =>
+          (prev.readerMode != cur.readerMode) ||
+          (prev.lineHeight != cur.lineHeight) ||
+          (prev.themeMode != cur.themeMode) ||
+          (prev.fontFamily != cur.fontFamily) ||
+          (prev.fontSize != cur.fontSize),
       builder: (ctx, state) {
         final defaultBuilder =
             widget.builders as EpubViewBuilders<DefaultBuilderOptions>;
@@ -754,97 +716,81 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.enableNavigationBar) {
-      return MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (_) => ReaderSettingCubit()),
-        ],
-        child: SafeArea(
-          child: Stack(
-            children: [
-              GestureDetector(
-                onTap: _toggleToolOrAppBar,
-                child: BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
-                  builder: (ctx, state) {
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          top: 0,
-                          child: NotificationListener<ScrollNotification>(
-                            onNotification: (scroll) {
-                              if (scroll is UserScrollNotification) {
-                                ctx
-                                    .read<ReaderSettingCubit>()
-                                    .onScrollUpdate(scroll);
-                              }
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ReaderSettingCubit()),
+      ],
+      child: SafeArea(
+        child: Stack(
+          children: [
+            /// App Bar Navigator controller
+            MultiBlocListener(
+              listeners: [
+                BlocListener<ReaderSettingCubit, ReaderSettingState>(
+                    listenWhen: (prev, cur) => prev.isShowToc != cur.isShowToc,
+                    listener: (ctx, state) {
+                      if (state.isShowToc) {
+                        _appBarAnimationController.reverse();
+                      } else {
+                        _appBarAnimationController.forward();
+                      }
+                    }),
+                BlocListener<ReaderSettingCubit, ReaderSettingState>(
+                    listenWhen: (prev, cur) =>
+                        prev.isShowSettingSection != cur.isShowSettingSection,
+                    listener: (ctx, state) {
+                      if (state.isShowSettingSection) {
+                        _themeSettingAnimationController.forward();
+                      } else {
+                        _themeSettingAnimationController.reverse();
+                      }
+                    }),
+              ],
+              child: const SizedBox(),
+            ),
+            ReaderSection(
+              builders: widget.builders,
+              controller: _controller,
+              buildLoaded: _buildLoaded,
+              buildLoadedHorizontal: _buildLoadedHorizontal,
+              loadingError: _loadingError,
+            ),
+            EpubAppBar(
+              animation: _appBarAnimation,
+            ),
 
-                              return false;
-                            },
-                            child: ColoredBox(
-                              color: state.themeMode.data.backgroundColor,
-                              child: widget.builders.builder(
-                                context,
-                                widget.builders,
-                                _controller.loadingState.value,
-                                state.readerMode.isHorizontal
-                                    ? _buildLoadedHorizontal
-                                    : _buildLoaded,
-                                _loadingError,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (isShowToc || isShowThemeSetting)
-                          InkWell(
-                            onTap: isShowToc ? _toggleToc : _toggleThemeSetting,
-                            child: Container(
-                              height: MediaQuery.of(context).size.height,
-                              width: MediaQuery.of(context).size.width,
-                              color: Colors.black.withOpacity(.3),
-                            ),
-                          )
-                      ],
+            EpubToolbar(
+              animation: _appBarAnimation,
+              onPrevious: () {},
+              onNext: () {},
+            ),
+
+            BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                buildWhen: (prev, cur) =>
+                    prev.isShowSettingSection != cur.isShowSettingSection,
+                builder: (context, state) {
+                  if (state.isShowSettingSection) {
+                    return ThemeSettingPanel(animation: _themeSettingAnimation);
+                  } else {
+                    return const SizedBox();
+                  }
+                }),
+
+            BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                buildWhen: (prev, cur) =>
+                    prev.isShowChaptersSection != cur.isShowChaptersSection,
+                builder: (context, state) {
+                  if (state.isShowChaptersSection) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: kToolbarHeight),
+                      child: EpubViewContents(controller: _controller),
                     );
-                  },
-                ),
-              ),
-              IgnorePointer(
-                ignoring: !isShowNavigationBar,
-                child: EpubAppBar(
-                  isOpenToc: isShowToc,
-                  isOpenThemeSetting: isShowThemeSetting,
-                  animation: _appBarAnimation,
-                  onTapToc: _toggleToc,
-                  onTapThemeSetting: _toggleThemeSetting,
-                ),
-              ),
-              IgnorePointer(
-                ignoring: !isShowNavigationBar,
-                child: EpubToolbar(
-                  animation: _appBarAnimation,
-                  onPrevious: () {},
-                  onNext: () {},
-                ),
-              ),
-              if (isShowThemeSetting)
-                ThemeSettingPanel(animation: _themeSettingAnimation),
-              if (isShowToc)
-                Padding(
-                  padding: const EdgeInsets.only(top: kToolbarHeight),
-                  child: EpubViewContents(controller: _controller),
-                ),
-            ],
-          ),
+                  }
+                  return const SizedBox();
+                }),
+          ],
         ),
-      );
-    }
-
-    return widget.builders.builder(
-      context,
-      widget.builders,
-      _controller.loadingState.value,
-      _buildLoaded,
-      _loadingError,
+      ),
     );
   }
 }

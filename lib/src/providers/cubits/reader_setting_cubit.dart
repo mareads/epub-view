@@ -20,6 +20,24 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
   void onFontFamilyChanged(EpubFontFamily fontFamily) =>
       emit(state.copyWith(fontFamily: fontFamily));
 
+  void onToggleAppBar() {
+    final isShowToc = !state.isShowToc;
+    if (isShowToc) {
+      emit(state.copyWith(isShowToc: !state.isShowToc));
+    } else {
+      emit(state.copyWith(
+          isShowToc: !state.isShowToc,
+          isShowSettingSection: !state.isShowToc,
+          isShowChaptersSection: !state.isShowToc));
+    }
+  }
+
+  void onToggleChapterSection() =>
+      emit(state.copyWith(isShowChaptersSection: !state.isShowChaptersSection));
+
+  void onToggleSettingSection() =>
+      emit(state.copyWith(isShowSettingSection: !state.isShowSettingSection));
+
   void onFontSizeChanged(EpubFontSize fontSize) =>
       emit(state.copyWith(fontSize: fontSize));
 
@@ -83,6 +101,9 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
 
 class ReaderSettingState extends Equatable {
   final EpubThemeMode themeMode;
+  final bool isShowToc;
+  final bool isShowSettingSection;
+  final bool isShowChaptersSection;
   final UserScrollNotification? scrollNotification;
   final EpubFontFamily fontFamily;
   final EpubFontSize fontSize;
@@ -91,6 +112,9 @@ class ReaderSettingState extends Equatable {
 
   const ReaderSettingState.init({
     this.themeMode = EpubThemeMode.light,
+    this.isShowToc = true,
+    this.isShowSettingSection = false,
+    this.isShowChaptersSection = false,
     this.scrollNotification,
     this.fontFamily = EpubFontFamily.sarabun,
     this.fontSize = EpubFontSize.medium,
@@ -101,6 +125,9 @@ class ReaderSettingState extends Equatable {
   const ReaderSettingState({
     required this.themeMode,
     this.scrollNotification,
+    this.isShowToc = true,
+    this.isShowSettingSection = false,
+    this.isShowChaptersSection = false,
     this.fontFamily = EpubFontFamily.sarabun,
     this.fontSize = EpubFontSize.medium,
     this.readerMode = ReaderMode.vertical,
@@ -125,9 +152,16 @@ class ReaderSettingState extends Equatable {
     EpubLineHeight? lineHeight,
     UserScrollNotification? scrollNotification,
     ReaderMode? readerMode,
+    bool? isShowToc,
+    bool? isShowChaptersSection,
+    bool? isShowSettingSection,
   }) =>
       ReaderSettingState(
         themeMode: themeMode ?? this.themeMode,
+        isShowToc: isShowToc ?? this.isShowToc,
+        isShowChaptersSection:
+            isShowChaptersSection ?? this.isShowChaptersSection,
+        isShowSettingSection: isShowSettingSection ?? this.isShowSettingSection,
         readerMode: readerMode ?? this.readerMode,
         scrollNotification: scrollNotification ?? this.scrollNotification,
         fontFamily: fontFamily ?? this.fontFamily,
@@ -142,6 +176,9 @@ class ReaderSettingState extends Equatable {
         fontSize,
         lineHeight,
         scrollNotification,
-        readerMode
+        readerMode,
+        isShowToc,
+        isShowChaptersSection,
+        isShowSettingSection
       ];
 }

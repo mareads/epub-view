@@ -10,30 +10,23 @@ import 'navigator_button.dart';
 class EpubAppBar extends StatelessWidget {
   const EpubAppBar({
     Key? key,
-    required this.isOpenToc,
-    required this.isOpenThemeSetting,
     required this.animation,
-    required this.onTapToc,
-    required this.onTapThemeSetting,
   }) : super(key: key);
 
-  final bool isOpenToc;
-  final bool isOpenThemeSetting;
   final Animation<double> animation;
-  final VoidCallback onTapToc;
-  final VoidCallback onTapThemeSetting;
 
-  static GlobalKey tocKey = GlobalKey();
   static GlobalKey themeSettingKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+      buildWhen: (prev, cur) =>
+          prev.themeMode != cur.themeMode || prev.isShowToc != cur.isShowToc,
       builder: (_, state) {
         return Align(
           alignment: Alignment.topCenter,
           child: IgnorePointer(
-            ignoring: animation.value == 1,
+            ignoring: !state.isShowToc,
             child: FadeTransition(
               opacity: animation,
               child: SizedBox(
@@ -54,11 +47,14 @@ class EpubAppBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 20),
                       InkWell(
-                        onTap: onTapToc,
+                        onTap: () {
+                          context
+                              .read<ReaderSettingCubit>()
+                              .onToggleChapterSection();
+                        },
                         overlayColor:
                             MaterialStateProperty.all(Colors.transparent),
                         child: Container(
-                          key: tocKey,
                           width: 128,
                           height: 40,
                           decoration: BoxDecoration(
@@ -68,29 +64,32 @@ class EpubAppBar extends StatelessWidget {
                                 : const Color(0xff343434),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                "assets/icons/menu_chapter.svg",
-                                color: isOpenToc
-                                    ? Theme.of(context).colorScheme.primary
-                                    : state.themeMode.data.textColor,
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                "เลือกตอน",
-                                style: GoogleFonts.sarabun(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w300,
-                                  color: isOpenToc
+                          child: BlocBuilder<ReaderSettingCubit,
+                              ReaderSettingState>(builder: (context, state) {
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/icons/menu_chapter.svg",
+                                  color: state.isShowChaptersSection
                                       ? Theme.of(context).colorScheme.primary
                                       : state.themeMode.data.textColor,
                                 ),
-                              )
-                            ],
-                          ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  "เลือกตอน",
+                                  style: GoogleFonts.sarabun(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w300,
+                                    color: state.isShowChaptersSection
+                                        ? Theme.of(context).colorScheme.primary
+                                        : state.themeMode.data.textColor,
+                                  ),
+                                )
+                              ],
+                            );
+                          }),
                         ),
                       ),
                     ],
@@ -101,7 +100,11 @@ class EpubAppBar extends StatelessWidget {
                       children: [
                         GestureDetector(
                           key: themeSettingKey,
-                          onTap: onTapThemeSetting,
+                          onTap: () {
+                            context
+                                .read<ReaderSettingCubit>()
+                                .onToggleSettingSection();
+                          },
                           child: Container(
                             width: 30,
                             height: 30,
@@ -114,11 +117,11 @@ class EpubAppBar extends StatelessWidget {
                             ),
                             alignment: Alignment.center,
                             child: Image.asset(
-                              isOpenThemeSetting
+                              state.isShowSettingSection
                                   ? 'assets/images/theme_setting_blue@3x.png'
                                   : 'assets/images/theme_setting_black@3x.png',
                               height: 24,
-                              color: isOpenThemeSetting
+                              color: state.isShowSettingSection
                                   ? Theme.of(context).colorScheme.primary
                                   : state.themeMode.data.textColor,
                             ),
@@ -126,7 +129,7 @@ class EpubAppBar extends StatelessWidget {
                         ),
                         const SizedBox(width: 20)
                       ],
-                    ),
+                    )
                   ],
                 ),
               ),
