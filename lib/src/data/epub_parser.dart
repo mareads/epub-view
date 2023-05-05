@@ -1,4 +1,5 @@
 import 'package:epub_view/src/data/epub_cfi_reader.dart';
+import 'package:epub_view/src/models/paragraph_progress.dart';
 import 'package:html/dom.dart' as dom;
 
 import 'models/paragraph.dart';
@@ -30,6 +31,26 @@ List<dom.Element> _removeAllDiv(List<dom.Element> elements) {
   }
 
   return result;
+}
+
+List<ParagraphProgress> paragraphProgressList(
+    {required List<Paragraph> paragraphs}) {
+  final List<ParagraphProgress> paragraphProgressList = [];
+  int prevChapterId = 0;
+  int paragraphCount = 0;
+  int loopCount = 0;
+  for (final paragraph in paragraphs) {
+    paragraphProgressList.add(ParagraphProgress(
+        chapterIndex: paragraph.chapterIndex,
+        paragraphIndex: prevChapterId == paragraph.chapterIndex
+            ? paragraphCount
+            : paragraphCount = 0,
+        paragraphProgressIndex: loopCount));
+    prevChapterId = paragraph.chapterIndex;
+    paragraphCount++;
+    loopCount++;
+  }
+  return paragraphProgressList;
 }
 
 ParseParagraphsResult parseParagraphs(

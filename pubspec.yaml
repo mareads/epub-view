@@ -24,7 +24,7 @@ dependencies:
   hive_flutter: ^1.1.0
   hydrated_bloc: ^9.1.0
   path_provider: ^2.0.14
-  scrollable_positioned_list: ^0.3.2
+  scrollable_positioned_list: ^0.3.7
   collection: ^1.16.0
   universal_file: ^1.0.0
   screen_brightness: ^0.2.2

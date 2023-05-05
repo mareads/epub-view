@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:epub_view/src/models/paragraph_progress.dart';
 import 'package:epub_view/src/ui/reader_section.dart';
 import 'package:epub_view/src/ui/widgets/epub_contents.dart';
 import 'package:html/dom.dart' as dom;
@@ -86,6 +87,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   ItemPositionsListener? _itemPositionListener;
   List<EpubChapter> _chapters = [];
   List<Paragraph> _paragraphs = [];
+  List<ParagraphProgress> _paragraphsProgressList = [];
   EpubCfiReader? _epubCfiReader;
   EpubChapterViewValue? _currentValue;
   final _chapterIndexes = <int>[];
@@ -109,6 +111,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     _pageController.addListener(_pageViewChangeListener);
     _itemScrollController = ItemScrollController();
     _itemPositionListener = ItemPositionsListener.create();
+
     _controller._attach(this);
     _controller.loadingState.addListener(() {
       switch (_controller.loadingState.value) {
@@ -170,6 +173,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     final parseParagraphsResult =
         parseParagraphs(_chapters, _controller._document!.Content);
     _paragraphs = parseParagraphsResult.flatParagraphs;
+    setState(() {
+      _paragraphsProgressList = paragraphProgressList(paragraphs: _paragraphs);
+    });
     _chapterIndexes.addAll(parseParagraphsResult.chapterIndexes);
 
     _epubCfiReader = EpubCfiReader.parser(
@@ -177,6 +183,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       chapters: _chapters,
       paragraphs: _paragraphs,
     );
+
     _itemPositionListener!.itemPositions.addListener(_changeListener);
     _controller.isBookLoaded.value = true;
 
@@ -749,6 +756,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               child: const SizedBox(),
             ),
             ReaderSection(
+              paragraphsProgressList: _paragraphsProgressList,
               builders: widget.builders,
               controller: _controller,
               buildLoaded: _buildLoaded,

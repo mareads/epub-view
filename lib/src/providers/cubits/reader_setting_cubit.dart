@@ -14,7 +14,7 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
   void onThemeChanged(EpubThemeMode mode) =>
       emit(state.copyWith(themeMode: mode));
 
-  void onScrollUpdate(UserScrollNotification scrollNotification) =>
+  void onScrollUpdate(ScrollNotification scrollNotification) =>
       emit(state.copyWith(scrollNotification: scrollNotification));
 
   void onFontFamilyChanged(EpubFontFamily fontFamily) =>
@@ -32,11 +32,17 @@ class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
     }
   }
 
-  void onToggleChapterSection() =>
-      emit(state.copyWith(isShowChaptersSection: !state.isShowChaptersSection));
+  void onToggleChapterSection() {
+    emit(state.copyWith(
+        isShowChaptersSection: !state.isShowChaptersSection,
+        isShowSettingSection: false));
+  }
 
-  void onToggleSettingSection() =>
-      emit(state.copyWith(isShowSettingSection: !state.isShowSettingSection));
+  void onToggleSettingSection() {
+    emit(state.copyWith(
+        isShowSettingSection: !state.isShowSettingSection,
+        isShowChaptersSection: false));
+  }
 
   void onFontSizeChanged(EpubFontSize fontSize) =>
       emit(state.copyWith(fontSize: fontSize));
@@ -104,7 +110,7 @@ class ReaderSettingState extends Equatable {
   final bool isShowToc;
   final bool isShowSettingSection;
   final bool isShowChaptersSection;
-  final UserScrollNotification? scrollNotification;
+  final ScrollNotification? scrollNotification;
   final EpubFontFamily fontFamily;
   final EpubFontSize fontSize;
   final EpubLineHeight lineHeight;
@@ -142,7 +148,7 @@ class ReaderSettingState extends Equatable {
   }
 
   num get scrollProgressPercentage {
-    return (scrollProgressRatio * 100).toInt();
+    return (scrollProgressRatio * 100).ceil().toInt();
   }
 
   ReaderSettingState copyWith({
@@ -150,7 +156,7 @@ class ReaderSettingState extends Equatable {
     EpubFontFamily? fontFamily,
     EpubFontSize? fontSize,
     EpubLineHeight? lineHeight,
-    UserScrollNotification? scrollNotification,
+    ScrollNotification? scrollNotification,
     ReaderMode? readerMode,
     bool? isShowToc,
     bool? isShowChaptersSection,
