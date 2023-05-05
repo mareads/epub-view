@@ -1,6 +1,17 @@
 part of 'epub_manager_bloc.dart';
 
-enum EpubManagerStatus { init, loading, success, error, downloading, downloaded, removing, removed }
+enum EpubManagerStatus {
+  init,
+  loading,
+  success,
+  error,
+  downloading,
+  downloaded,
+  removing,
+  removed,
+  updating,
+  updated,
+}
 
 extension EpubManagerStatusX on EpubManagerStatus {
   bool get isInit => this == EpubManagerStatus.init;
@@ -18,6 +29,10 @@ extension EpubManagerStatusX on EpubManagerStatus {
   bool get isRemoving => this == EpubManagerStatus.removing;
 
   bool get isRemoved => this == EpubManagerStatus.removed;
+
+  bool get isUpdating => this == EpubManagerStatus.updating;
+
+  bool get isUpdated => this == EpubManagerStatus.updated;
 }
 
 class EpubManagerState extends Equatable {
@@ -26,27 +41,31 @@ class EpubManagerState extends Equatable {
     this.ePubs = const [],
     this.downloadPercent = const {0: 0},
     this.removePercent = const {0: 0},
+    this.updatePercent = 0,
   });
 
   final EpubManagerStatus status;
   final List<EpubBookModel> ePubs;
   final Map<int, double> downloadPercent; // Map<ePubId, Download-Percent>
   final Map<int, double> removePercent;
+  final double updatePercent;
 
   EpubManagerState copyWith({
     EpubManagerStatus? status,
     List<EpubBookModel>? ePubs,
     Map<int, double>? downloadPercent,
     Map<int, double>? removePercent,
+    double? updatePercent,
   }) {
     return EpubManagerState(
       status: status ?? this.status,
       ePubs: ePubs ?? this.ePubs,
       downloadPercent: downloadPercent ?? this.downloadPercent,
       removePercent: removePercent ?? this.removePercent,
+      updatePercent: updatePercent ?? this.updatePercent,
     );
   }
 
   @override
-  List<Object?> get props => [status, ePubs, downloadPercent, removePercent];
+  List<Object?> get props => [status, ePubs, downloadPercent, removePercent, updatePercent];
 }
