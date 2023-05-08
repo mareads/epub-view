@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:epub_view/src/data/setting/src/reader_mode.dart';
 import 'package:epub_view/src/models/paragraph_progress.dart';
 import 'package:epub_view/src/ui/reader_section.dart';
 import 'package:epub_view/src/ui/widgets/epub_contents.dart';
@@ -627,53 +629,77 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             color: state.themeMode.data.textColor,
           ),
         ));
-        return PageView(
-          controller: _pageController,
-          children: pages
-              .map(
-                (element) => Padding(
-                  padding: padding,
-                  child: Center(
-                    child: Html(
-                      data: element.outerHtml,
-                      // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-                      style: {
-                        'h1': headerFontStyle,
-                        'h2': headerFontStyle,
-                        'h3': headerFontStyle,
-                        'h4': headerFontStyle,
-                        'html': Style().merge(Style.fromTextStyle(
-                          TextStyle(
-                            height: state.lineHeight.value,
-                            fontWeight: FontWeight.w300,
-                            fontFamily: state.fontFamily.family,
-                            fontSize: state.fontFamily.isJsJindara
-                                ? state.fontSize.dataJs
-                                : state.fontSize.data,
-                            color: state.themeMode.data.textColor,
-                          ),
-                        )),
-                      },
-                      customRenders: {
-                        tagMatcher('img'): CustomRender.widget(
-                            widget: (context, buildChildren) {
-                          final url = context.tree.element!.attributes['src']!
-                              .replaceAll('../', '');
-                          return Image(
-                            image: MemoryImage(
-                              Uint8List.fromList(
-                                widget.controller._document!.Content!
-                                    .Images![url]!.Content!,
-                              ),
+        return GestureDetector(
+          onTapUp: (details) {
+            final RenderBox box = context.findRenderObject() as RenderBox;
+            final localOffset = box.globalToLocal(details.globalPosition);
+            final x = localOffset.dx;
+            final y = localOffset.dy;
+            final tapableHeight = box.size.height / 2;
+            final topTapableHeight = tapableHeight + box.size.height * 0.2;
+            final bottomTapableHeight = tapableHeight - box.size.height * 0.2;
+            if (y < topTapableHeight && y > bottomTapableHeight) {
+              if (x < box.size.width / 2) {
+                _pageController.previousPage(
+                    duration: const Duration(milliseconds: 100),
+                    curve: Curves.linear);
+              } else {
+                _pageController.nextPage(
+                    duration: const Duration(milliseconds: 100),
+                    curve: Curves.linear);
+              }
+            } else {
+              ctx.read<ReaderSettingCubit>().onToggleAppBar();
+            }
+          },
+          child: PageView(
+            controller: _pageController,
+            children: pages
+                .map(
+                  (element) => Padding(
+                    padding: padding,
+                    child: Center(
+                      child: Html(
+                        data: element.outerHtml,
+                        // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+                        style: {
+                          'h1': headerFontStyle,
+                          'h2': headerFontStyle,
+                          'h3': headerFontStyle,
+                          'h4': headerFontStyle,
+                          'html': Style().merge(Style.fromTextStyle(
+                            TextStyle(
+                              height: state.lineHeight.value,
+                              fontWeight: FontWeight.w300,
+                              fontFamily: state.fontFamily.family,
+                              fontSize: state.fontFamily.isJsJindara
+                                  ? state.fontSize.dataJs
+                                  : state.fontSize.data,
+                              color: state.themeMode.data.textColor,
                             ),
-                          );
-                        }),
-                      },
+                          )),
+                        },
+                        customRenders: {
+                          tagMatcher('img'): CustomRender.widget(
+                              widget: (context, buildChildren) {
+                            final url = context.tree.element!.attributes['src']!
+                                .replaceAll('../', '');
+                            return Image(
+                              image: MemoryImage(
+                                Uint8List.fromList(
+                                  widget.controller._document!.Content!
+                                      .Images![url]!.Content!,
+                                ),
+                              ),
+                            );
+                          }),
+                        },
+                      ),
                     ),
                   ),
-                ),
-              )
-              .toList(),
+                )
+                .toList(),
+          ),
         );
       },
     );
