@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:epub_view/src/data/setting/src/epub_theme_mode.dart';
 import 'package:epub_view/src/data/setting/src/reader_mode.dart';
 import 'package:flutter/material.dart';
@@ -39,21 +38,17 @@ class _ReaderSectionState extends State<ReaderSection> {
 
     widget.controller.currentValueListenable.addListener(() {
       if (context.read<ReaderSettingCubit>().state.readerMode.isVertical) {
-        final currentChapter =
-            widget.controller.currentValueListenable.value!.chapterNumber - 1;
-        final currentParagraph =
-            widget.controller.currentValueListenable.value!.paragraphNumber - 1;
-        final currentProgress = widget.paragraphsProgressList.firstWhere(
-            (element) =>
-                element.chapterIndex == currentChapter &&
-                element.paragraphIndex == currentParagraph);
+        final currentParagraph = widget.controller.currentValueListenable.value!
+                .currentAllParagraphIndex +
+            1;
+
         context
             .read<ReaderSettingCubit>()
             .onScrollUpdate(UserScrollNotification(
                 metrics: FixedScrollMetrics(
                   maxScrollExtent:
                       widget.paragraphsProgressList.length.toDouble(),
-                  pixels: currentProgress.paragraphProgressIndex.toDouble(),
+                  pixels: currentParagraph.toDouble(),
                   minScrollExtent: 1,
                   viewportDimension: 1,
                   axisDirection: AxisDirection.right,

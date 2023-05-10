@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -208,6 +209,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         chapterNumber: chapterIndex + 1,
         paragraphNumber: 0,
         position: position,
+        currentAllParagraphIndex: 0,
       );
 
       _controller.currentValueListenable.value = _currentValue;
@@ -221,6 +223,18 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       return;
     }
     final position = _itemPositionListener!.itemPositions.value.first;
+    final itemTrailingEdges = _itemPositionListener!.itemPositions.value
+        .map((e) => e.itemTrailingEdge);
+    final bottomScreenItemRatio = itemTrailingEdges.reduce((all, sum) {
+      if (sum <= 1 && sum >= 0) {
+        return max(all, sum);
+      }
+      return all;
+    });
+    final currentParagraphIndex = _itemPositionListener!.itemPositions.value
+        .firstWhere(
+            (element) => element.itemTrailingEdge == bottomScreenItemRatio)
+        .index;
     final chapterIndex = _getChapterIndexBy(
       positionIndex: position.index,
       trailingEdge: position.itemTrailingEdge,
@@ -236,6 +250,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       chapter: chapterIndex >= 0 ? _chapters[chapterIndex] : null,
       chapterNumber: chapterIndex + 1,
       paragraphNumber: paragraphIndex + 1,
+      currentAllParagraphIndex: currentParagraphIndex,
       position: position,
     );
 
@@ -251,94 +266,124 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     );
   }
 
-  List<dom.Element> paragraphsToPagesHandler(List<Paragraph> paragraphs,
-      ReaderSettingState state, EdgeInsetsGeometry padding) {
+  Future<List<dom.Element>> paragraphsToPagesHandler(List<Paragraph> paragraphs,
+      ReaderSettingState state, EdgeInsetsGeometry padding) async {
     /// reset for each run
     _chapterPageList.clear();
     _chapterPageList.add(0);
 
     final List<dom.Element> pages = [];
-    final List<InlineSpan> spans = [];
     final List<String> elements = [];
     int currentChapter = 0;
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     double currentPageHeight = 0;
+    final safeAreaPixel = MediaQuery.of(context).padding.top +
+        MediaQuery.of(context).padding.bottom;
+    final paddingWidth = padding.horizontal * 2;
+    final maxScreenHeight =
+        screenHeight - safeAreaPixel - (padding.vertical * 2);
+    double? paintHeight;
+    final fontSize = state.fontFamily.isJsJindara
+        ? state.fontSize.dataJs
+        : state.fontSize.data;
+    const indentCount = 8;
+    final indentDartString = " " * indentCount;
+    final indentHtmlString = "&nbsp;" * indentCount;
 
     for (final paragraph in paragraphs) {
       if (paragraph.element.nodeType == dom.Node.ELEMENT_NODE) {
-        const indentCount = 8;
-        final indentDartString = " " * indentCount;
-        final indentHtmlString = "&nbsp;" * indentCount;
-        final String text = paragraph.element.text.trim();
-        if (text.isNotEmpty) {
-          final isNewChapter = currentChapter != paragraph.chapterIndex;
+        final isNewChapter = currentChapter != paragraph.chapterIndex;
+        final isImageTag = paragraph.element.localName == "img";
+        if (isImageTag) {
+          Completer<Size> completer = Completer();
+          final url =
+              paragraph.element.attributes["src"]!.replaceAll('../', '');
 
-          final fontSize = state.fontFamily.isJsJindara
-              ? state.fontSize.dataJs
-              : state.fontSize.data;
-          final TextSpan span = TextSpan(
-            text: isNewChapter ? text : "$indentDartString$text",
-            style: TextStyle(
-              height: state.lineHeight.value,
-              fontWeight: FontWeight.w300,
-              fontFamily: state.fontFamily.family,
-              fontSize: fontSize,
-              color: state.themeMode.data.textColor,
+          Image image = Image(
+            image: MemoryImage(
+              Uint8List.fromList(
+                widget.controller._document!.Content!.Images![url]!.Content!,
+              ),
             ),
           );
-          final TextPainter painter = TextPainter(
-            text: span,
-            textAlign: TextAlign.left,
-            textDirection: TextDirection.ltr,
+          image.image.resolve(const ImageConfiguration()).addListener(
+            ImageStreamListener(
+              (ImageInfo image, bool synchronousCall) {
+                var myImage = image.image;
+                Size size =
+                    Size(myImage.width.toDouble(), myImage.height.toDouble());
+                completer.complete(size);
+              },
+            ),
           );
-
-          final safeAreaPixel = MediaQuery.of(context).padding.top +
-              MediaQuery.of(context).padding.bottom;
-          final paddingWidth = padding.horizontal * 2;
-          final maxScreenHeight =
-              screenHeight - safeAreaPixel - (padding.vertical * 2);
-
-          painter.layout(maxWidth: screenWidth - paddingWidth);
-          // print("--------");
-          // print("text");
-          // print(span.text);
-          // print("painter lines");
-          // print(painter.computeLineMetrics().length);
-          // print("currentPageHeight");
-          // print(currentPageHeight);
-          // print("maxScreenHeight");
-          // print(maxScreenHeight);
-          // print("--------");
-
-          /// add paragraph margin spacing to calculate formular
-          final paintHeight = painter.height + fontSize * 2;
-
-          if ((currentPageHeight + paintHeight > maxScreenHeight) ||
-              isNewChapter) {
-            pages.add(dom.Element.html(
-                '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
-            spans.clear();
-            elements.clear();
-            currentPageHeight = 0;
-            if (isNewChapter) {
-              _chapterPageList.add(pages.length);
-            }
+          final Size imageSize = await completer.future;
+          if (imageSize.width > screenWidth - paddingWidth) {
+            final diffRatio = (imageSize.width - (screenWidth - paddingWidth)) /
+                imageSize.width;
+            paintHeight = ((imageSize.height * diffRatio) - imageSize.height) +
+                fontSize * 2;
+          } else {
+            paintHeight = imageSize.height + fontSize * 2;
           }
+        } else {
+          final String text = paragraph.element.text.trim();
+          if (text.isNotEmpty) {
+            final TextSpan span = TextSpan(
+              text: isNewChapter ? text : "$indentDartString$text",
+              style: TextStyle(
+                height: state.lineHeight.value,
+                fontWeight: FontWeight.w300,
+                fontFamily: state.fontFamily.family,
+                fontSize: fontSize,
+                color: state.themeMode.data.textColor,
+              ),
+            );
+            final TextPainter painter = TextPainter(
+              text: span,
+              textAlign: TextAlign.left,
+              textDirection: TextDirection.ltr,
+            );
 
-          if (paragraph == paragraphs.last) {
-            pages.add(dom.Element.html(
-                '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
-            spans.clear();
-            elements.clear();
-            currentPageHeight = 0;
+            painter.layout(maxWidth: screenWidth - paddingWidth);
+            // print("--------");
+            // print("text");
+            // print(span.text);
+            // print("painter lines");
+            // print(painter.computeLineMetrics().length);
+            // print("currentPageHeight");
+            // print(currentPageHeight);
+            // print("maxScreenHeight");
+            // print(maxScreenHeight);
+            // print("--------");
+
+            /// add paragraph margin spacing to calculate formular
+            paintHeight = painter.height + fontSize * 2;
           }
-          spans.add(span);
-          elements.add(paragraph.element.outerHtml
-              .replaceFirst('<p>', '<p>$indentHtmlString'));
-          // debugger();
-          currentPageHeight += paintHeight;
-          currentChapter = paragraph.chapterIndex;
+        }
+
+        if ((currentPageHeight + paintHeight! > maxScreenHeight) ||
+            isNewChapter) {
+          pages.add(dom.Element.html(
+              '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+          elements.clear();
+          currentPageHeight = 0;
+          if (isNewChapter) {
+            _chapterPageList.add(pages.length);
+          }
+        }
+
+        elements.add(paragraph.element.outerHtml
+            .replaceFirst('<p>', '<p>$indentHtmlString'));
+        // debugger();
+        currentPageHeight += paintHeight;
+        currentChapter = paragraph.chapterIndex;
+
+        if (paragraph == paragraphs.last) {
+          pages.add(dom.Element.html(
+              '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+          elements.clear();
+          currentPageHeight = 0;
         }
       }
     }
@@ -537,6 +582,12 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     final options = defaultBuilder.options;
 
     return BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+      buildWhen: (prev, cur) =>
+          (prev.readerMode != cur.readerMode) ||
+          (prev.lineHeight != cur.lineHeight) ||
+          (prev.themeMode != cur.themeMode) ||
+          (prev.fontFamily != cur.fontFamily) ||
+          (prev.fontSize != cur.fontSize),
       builder: (_, state) {
         return Column(
           children: <Widget>[
@@ -617,7 +668,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             widget.builders as EpubViewBuilders<DefaultBuilderOptions>;
         DefaultBuilderOptions options = defaultBuilder.options;
         final padding = options.paragraphPadding;
-        List<dom.Element> pages =
+        Future<List<dom.Element>> pages =
             paragraphsToPagesHandler(_paragraphs, state, padding);
         final headerFontStyle = Style().merge(Style.fromTextStyle(
           TextStyle(
@@ -652,54 +703,65 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               ctx.read<ReaderSettingCubit>().onToggleAppBar();
             }
           },
-          child: PageView(
-            controller: _pageController,
-            children: pages
-                .map(
-                  (element) => Padding(
-                    padding: padding,
-                    child: Center(
-                      child: Html(
-                        data: element.outerHtml,
-                        // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-                        style: {
-                          'h1': headerFontStyle,
-                          'h2': headerFontStyle,
-                          'h3': headerFontStyle,
-                          'h4': headerFontStyle,
-                          'html': Style().merge(Style.fromTextStyle(
-                            TextStyle(
-                              height: state.lineHeight.value,
-                              fontWeight: FontWeight.w300,
-                              fontFamily: state.fontFamily.family,
-                              fontSize: state.fontFamily.isJsJindara
-                                  ? state.fontSize.dataJs
-                                  : state.fontSize.data,
-                              color: state.themeMode.data.textColor,
-                            ),
-                          )),
-                        },
-                        customRenders: {
-                          tagMatcher('img'): CustomRender.widget(
-                              widget: (context, buildChildren) {
-                            final url = context.tree.element!.attributes['src']!
-                                .replaceAll('../', '');
-                            return Image(
-                              image: MemoryImage(
-                                Uint8List.fromList(
-                                  widget.controller._document!.Content!
-                                      .Images![url]!.Content!,
+          child: FutureBuilder<List<dom.Element>>(
+              future: pages,
+              builder: (context, snap) {
+                return snap.data != null
+                    ? PageView(
+                        controller: _pageController,
+                        children: snap.data!
+                            .map(
+                              (element) => Padding(
+                                padding: padding,
+                                child: Center(
+                                  child: Html(
+                                    data: element.outerHtml,
+                                    // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+                                    style: {
+                                      'h1': headerFontStyle,
+                                      'h2': headerFontStyle,
+                                      'h3': headerFontStyle,
+                                      'h4': headerFontStyle,
+                                      'html': Style().merge(Style.fromTextStyle(
+                                        TextStyle(
+                                          height: state.lineHeight.value,
+                                          fontWeight: FontWeight.w300,
+                                          fontFamily: state.fontFamily.family,
+                                          fontSize: state.fontFamily.isJsJindara
+                                              ? state.fontSize.dataJs
+                                              : state.fontSize.data,
+                                          color: state.themeMode.data.textColor,
+                                        ),
+                                      )),
+                                    },
+                                    customRenders: {
+                                      tagMatcher('img'): CustomRender.widget(
+                                          widget: (context, buildChildren) {
+                                        final url = context
+                                            .tree.element!.attributes['src']!
+                                            .replaceAll('../', '');
+                                        return Image(
+                                          image: MemoryImage(
+                                            Uint8List.fromList(
+                                              widget
+                                                  .controller
+                                                  ._document!
+                                                  .Content!
+                                                  .Images![url]!
+                                                  .Content!,
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    },
+                                  ),
                                 ),
                               ),
-                            );
-                          }),
-                        },
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
+                            )
+                            .toList(),
+                      )
+                    : const Text("Loading...");
+              }),
         );
       },
     );

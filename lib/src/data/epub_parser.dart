@@ -53,6 +53,10 @@ List<ParagraphProgress> paragraphProgressList(
   return paragraphProgressList;
 }
 
+bool isEmptyElement(dom.Element element) {
+  return element.nodes.isNotEmpty || element.localName == "img";
+}
+
 ParseParagraphsResult parseParagraphs(
   List<EpubChapter> chapters,
   EpubContent? content,

@@ -9,6 +9,7 @@ class EpubChapterViewValue {
     required this.chapterNumber,
     required this.onHorizontalPageChange,
     required this.paragraphNumber,
+    required this.currentAllParagraphIndex,
     required this.position,
   });
 
@@ -16,6 +17,7 @@ class EpubChapterViewValue {
   final int chapterNumber;
   final void Function({required int chapterId}) onHorizontalPageChange;
   final int paragraphNumber;
+  final int currentAllParagraphIndex;
   final ItemPosition position;
 
   /// Chapter view in percents
