@@ -12,11 +12,35 @@ extension ExtensionTypeLineHeight on TypeLineHeight {
 }
 
 class EpubLineHeight with EquatableMixin implements ValueLineHeightSettings {
-  static const EpubLineHeight factor_1_25 = EpubLineHeight._(TypeLineHeight.light, 1.25);
-  static const EpubLineHeight factor_1_5 = EpubLineHeight._(TypeLineHeight.normal, 1.5);
-  static const EpubLineHeight factor_2_0 = EpubLineHeight._(TypeLineHeight.medium, 2.0);
-  static const EpubLineHeight factor_2_5 = EpubLineHeight._(TypeLineHeight.hard, 2.5);
-  static const EpubLineHeight factor_3_0 = EpubLineHeight._(TypeLineHeight.extra, 3.0);
+  static const EpubLineHeight factor_1_25 =
+      EpubLineHeight._(TypeLineHeight.light, 1.25);
+  static const EpubLineHeight factor_1_5 =
+      EpubLineHeight._(TypeLineHeight.normal, 1.5);
+  static const EpubLineHeight factor_2_0 =
+      EpubLineHeight._(TypeLineHeight.medium, 2.0);
+  static const EpubLineHeight factor_2_5 =
+      EpubLineHeight._(TypeLineHeight.hard, 2.5);
+  static const EpubLineHeight factor_3_0 =
+      EpubLineHeight._(TypeLineHeight.extra, 3.0);
+
+  static epubLineHeightFromString(String name) {
+    switch (name) {
+      case "normal":
+        return const EpubLineHeight._(TypeLineHeight.normal, 1.5);
+
+      case "light":
+        return const EpubLineHeight._(TypeLineHeight.light, 1.25);
+
+      case "medium":
+        return const EpubLineHeight._(TypeLineHeight.medium, 2.0);
+
+      case "extra":
+        return const EpubLineHeight._(TypeLineHeight.extra, 3.0);
+
+      case "hard":
+        return const EpubLineHeight._(TypeLineHeight.hard, 2.5);
+    }
+  }
 
   static const List<EpubLineHeight> values = [
     factor_1_25,
@@ -36,8 +60,8 @@ class EpubLineHeight with EquatableMixin implements ValueLineHeightSettings {
   @override
   List<Object> get props => [type, value];
 
-  static EpubLineHeight from(String name) =>
-      values.firstWhere((type) => type.type.name == name, orElse: () => factor_1_5);
+  static EpubLineHeight from(String name) => values
+      .firstWhere((type) => type.type.name == name, orElse: () => factor_1_5);
 
   @override
   String toString() => 'EpubLineHeight{name: ${type.name}, value: $value}';

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:epub_view/epub_view.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'epub_book_model.g.dart';
@@ -9,12 +10,24 @@ part 'epub_book_model.g.dart';
 class EpubBookModel {
   final int? id;
   final String? title;
+  final ReadingProgress? readingProgress;
+  final ReadingSettings? readingSettings;
   final String? updateTime;
-  @JsonKey(name: "file", fromJson: FileConverter.getFile, toJson: FileConverter.getBytes)
+  @JsonKey(
+      name: "file",
+      fromJson: FileConverter.getFile,
+      toJson: FileConverter.getBytes)
   File? file;
   final bool? isDownloaded;
 
-  EpubBookModel({this.id, this.title, this.updateTime, this.file, this.isDownloaded});
+  EpubBookModel(
+      {this.id,
+      this.title,
+      this.updateTime,
+      this.file,
+      this.isDownloaded,
+      this.readingProgress,
+      this.readingSettings});
 
   EpubBookModel copyWith({
     int? id,
@@ -22,6 +35,8 @@ class EpubBookModel {
     String? updateTime,
     File? file,
     bool? isDownloaded,
+    ReadingProgress? readingProgress,
+    ReadingSettings? readingSettings,
   }) {
     return EpubBookModel(
       id: id ?? this.id,
@@ -29,10 +44,13 @@ class EpubBookModel {
       updateTime: updateTime ?? this.updateTime,
       file: file ?? this.file,
       isDownloaded: isDownloaded ?? this.isDownloaded,
+      readingProgress: readingProgress ?? this.readingProgress,
+      readingSettings: readingSettings ?? this.readingSettings,
     );
   }
 
-  factory EpubBookModel.fromJson(Map<String, dynamic> json) => _$EpubBookModelFromJson(json);
+  factory EpubBookModel.fromJson(Map<String, dynamic> json) =>
+      _$EpubBookModelFromJson(json);
   Map<String, dynamic> toJson() => _$EpubBookModelToJson(this);
 }
 
@@ -61,5 +79,6 @@ class FileConverter extends JsonConverter<File, List<int>?> {
     return List<int>.from(uInt8list);
   }
 
-  static List<int>? getBytes(File? object) => object == null ? null : const FileConverter().toJson(object);
+  static List<int>? getBytes(File? object) =>
+      object == null ? null : const FileConverter().toJson(object);
 }

@@ -21,13 +21,16 @@ class EpubBookTypeAdapter extends TypeAdapter<EpubBookType> {
       title: fields[1] as String?,
       updateTime: fields[2] as String?,
       file: fields[3] as Uint8List?,
+      verticalReadingParagraphProgress: fields[4] as int?,
+      horizontalReadingPageProgress: fields[5] as int?,
+      readingSettings: fields[6] as dynamic,
     );
   }
 
   @override
   void write(BinaryWriter writer, EpubBookType obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -35,7 +38,13 @@ class EpubBookTypeAdapter extends TypeAdapter<EpubBookType> {
       ..writeByte(2)
       ..write(obj.updateTime)
       ..writeByte(3)
-      ..write(obj.file);
+      ..write(obj.file)
+      ..writeByte(4)
+      ..write(obj.verticalReadingParagraphProgress)
+      ..writeByte(5)
+      ..write(obj.horizontalReadingPageProgress)
+      ..writeByte(6)
+      ..write(obj.readingSettings);
   }
 
   @override

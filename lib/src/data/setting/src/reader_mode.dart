@@ -5,3 +5,7 @@ extension ReaderModeX on ReaderMode {
 
   bool get isVertical => this == ReaderMode.vertical;
 }
+
+ReaderMode? readerModeFromString(String name) {
+  return ReaderMode.values.firstWhere((element) => element.name == name);
+}

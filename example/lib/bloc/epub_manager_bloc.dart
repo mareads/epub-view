@@ -34,15 +34,18 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
               title: ePubsFromAssets[index],
             ));
 
-    List<EpubBookType> ePubsFromLocalStorage = await EpubBookBox().getEpubBooks();
+    List<EpubBookType> ePubsFromLocalStorage =
+        await EpubBookBox().getEpubBooks();
 
     for (var i = 0; i < ePubs.length; i++) {
       String title = ePubs[i].title!.split("/")[2].split(".epub").join();
-      bool isDownloaded = await EpubBookBox().isFileExists(epubId: ePubs[i].id!, title: title);
+      bool isDownloaded =
+          await EpubBookBox().isFileExists(epubId: ePubs[i].id!, title: title);
 
       if (isDownloaded) {
-        Uint8List? uInt8list =
-            ePubsFromLocalStorage.singleWhere((element) => element.id == ePubs[i].id).file;
+        EpubBookType currentEpub = ePubsFromLocalStorage
+            .singleWhere((element) => element.id == ePubs[i].id);
+        Uint8List? uInt8list = currentEpub.file;
         File file = File("${tempDir.path}/${title}_${ePubs[i].id}.epub");
         var raf = file.openSync(mode: FileMode.write);
         raf.writeFromSync(List<int>.from(uInt8list!));
@@ -50,9 +53,26 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
         File newFile = File(raf.path);
 
         ePubs[i] = ePubs[i].copyWith(
-          isDownloaded: isDownloaded,
-          file: newFile,
-        );
+            isDownloaded: isDownloaded,
+            file: newFile,
+            readingProgress: ReadingProgress(
+                verticalReadingParagraphProgress:
+                    currentEpub.verticalReadingParagraphProgress,
+                horizontalReadingPageProgress:
+                    currentEpub.horizontalReadingPageProgress),
+            readingSettings: ReadingSettings(
+                readerMode: readerModeFromString(
+                    currentEpub.readingSettings?.readerMode?.name ??
+                        ReaderMode.vertical.name),
+                fontSize: epubFontSizeFromString(
+                    currentEpub.readingSettings?.fontSize?.name ??
+                        EpubFontSize.normal.name),
+                fontFamily: epubFontFamilyFromString(
+                    currentEpub.readingSettings?.fontFamily?.name ??
+                        EpubFontFamily.sarabun.name),
+                lineHeight: EpubLineHeight.epubLineHeightFromString(
+                    currentEpub.readingSettings?.lineHeight?.name ?? EpubLineHeight.factor_1_5.type.name),
+                themeMode: epubThemeModeFromString(currentEpub.readingSettings?.themeMode?.name ?? EpubThemeMode.light.name)));
       }
     }
 
@@ -96,11 +116,13 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
       var raf = file.openSync(mode: FileMode.write);
       raf.writeFromSync(response.data);
       await raf.close();
-      emit(state
-          .copyWith(downloadPercent: {event.id: 1}, status: EpubManagerStatus.downloaded)); // 100%
+      emit(state.copyWith(
+          downloadPercent: {event.id: 1},
+          status: EpubManagerStatus.downloaded)); // 100%
       File newFile = File(raf.path);
       final updateEpub = currentEpub.copyWith(file: newFile);
-      await EpubBookBox().saveEpubBook(ePub: updateEpub.copyWith(title: event.ePubName));
+      await EpubBookBox()
+          .saveEpubBook(ePub: updateEpub.copyWith(title: event.ePubName));
       emit(state.copyWith(
         status: EpubManagerStatus.success,
         downloadPercent: {0: 0}, // Download is done.
@@ -112,14 +134,17 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
     }
   }
 
-  Future<void> _removeEpubBook(RemoveEpubBookEvent event, Emitter<EpubManagerState> emit) async {
+  Future<void> _removeEpubBook(
+      RemoveEpubBookEvent event, Emitter<EpubManagerState> emit) async {
     emit(state.copyWith(status: EpubManagerStatus.removing));
     Map<int, double> mapRemovePercent = {event.id: 50};
 
     emit(state.copyWith(removePercent: mapRemovePercent));
-    final isSuccess = await EpubBookBox().deleteBook(epubId: event.id, title: event.ePubName);
+    final isSuccess =
+        await EpubBookBox().deleteBook(epubId: event.id, title: event.ePubName);
     if (!isSuccess) {
-      emit(state.copyWith(status: EpubManagerStatus.success, removePercent: {0: 0}));
+      emit(state
+          .copyWith(status: EpubManagerStatus.success, removePercent: {0: 0}));
       return;
     }
     mapRemovePercent = {event.id: 80};
@@ -131,7 +156,8 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
         .copyWith(file: null, isDownloaded: false);
     int index = ePubs.indexWhere((element) => element.id == event.id);
     mapRemovePercent = {event.id: 100};
-    emit(state.copyWith(status: EpubManagerStatus.removed, removePercent: mapRemovePercent));
+    emit(state.copyWith(
+        status: EpubManagerStatus.removed, removePercent: mapRemovePercent));
 
     emit(state.copyWith(
       status: EpubManagerStatus.success,
@@ -140,8 +166,10 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
     ));
   }
 
-  Future<void> _updateEpubBook(UpdateEpubBookEvent event, Emitter<EpubManagerState> emit) async {
-    EpubBookModel epubBook = state.ePubs.singleWhere((element) => element.id == event.ePubId);
+  Future<void> _updateEpubBook(
+      UpdateEpubBookEvent event, Emitter<EpubManagerState> emit) async {
+    EpubBookModel epubBook =
+        state.ePubs.singleWhere((element) => element.id == event.ePubId);
     String title = epubBook.title!.split("/")[2].split(".epub").join();
 
     if (int.tryParse(title) == null) {
@@ -149,8 +177,10 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
       return;
     }
 
-    final epubType = await EpubBookBox().getEpubBook(epubId: event.ePubId, title: title);
-    int difference = DateTime.parse(epubType.updateTime!).difference(DateTime.now()).inDays;
+    final epubType =
+        await EpubBookBox().getEpubBook(epubId: event.ePubId, title: title);
+    int difference =
+        DateTime.parse(epubType.updateTime!).difference(DateTime.now()).inDays;
 
     if (difference.isNegative) {
       String path =
@@ -160,7 +190,8 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
       var tempDir = await getTemporaryDirectory();
       String savePath = "${tempDir.path}/${title}_${event.ePubId}.epub";
 
-      final index = state.ePubs.indexWhere((element) => element.id == event.ePubId);
+      final index =
+          state.ePubs.indexWhere((element) => element.id == event.ePubId);
       final currentEpub = state.ePubs[index].copyWith();
       Response response = await Dio().get(
         path,
@@ -187,7 +218,8 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
         await EpubBookBox().deleteBook(epubId: event.ePubId, title: title);
         File newFile = File(raf.path);
         final updateEpub = currentEpub.copyWith(file: newFile);
-        await EpubBookBox().saveEpubBook(ePub: updateEpub.copyWith(title: title));
+        await EpubBookBox()
+            .saveEpubBook(ePub: updateEpub.copyWith(title: title));
         emit(state.copyWith(
           updatePercent: 0, // Download is done.
           ePubs: state.ePubs..[index] = updateEpub.copyWith(isDownloaded: true),

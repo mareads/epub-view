@@ -9,12 +9,19 @@ class EpubBookBox {
 
   static void registerAdapters() {
     Hive.registerAdapter(EpubBookTypeAdapter());
+    Hive.registerAdapter(ReadingSettingsTypeAdapter());
+    Hive.registerAdapter(FontFamilyEnumTypeAdapter());
+    Hive.registerAdapter(FontSizeEnumTypeAdapter());
+    Hive.registerAdapter(LineHeightEnumTypeAdapter());
+    Hive.registerAdapter(ReaderModeEnumTypeAdapter());
+    Hive.registerAdapter(ThemeModeEnumTypeAdapter());
   }
 
   Future<void> openEpubBookBoxes() async =>
       await Hive.openLazyBox<EpubBookType>(HiveBoxCollections.epubBookBoxKey);
 
-  Future<bool> isFileExists({required int epubId, required String title}) async {
+  Future<bool> isFileExists(
+      {required int epubId, required String title}) async {
     final box = Hive.lazyBox<EpubBookType>(HiveBoxCollections.epubBookBoxKey);
     final book = await box.get("${epubId}_$title");
     return book != null;
@@ -32,10 +39,29 @@ class EpubBookBox {
     return books;
   }
 
-  Future<EpubBookType> getEpubBook({required int epubId, required String title}) async {
+  Future<EpubBookType> getEpubBook(
+      {required int epubId, required String title}) async {
     final box = Hive.lazyBox<EpubBookType>(HiveBoxCollections.epubBookBoxKey);
     final book = await box.get("${epubId}_$title");
     return book!;
+  }
+
+  Future<void> saveProgressEpubBook(
+      {required EpubBookModel ePub,
+      required ReadingProgress readingProgress,
+      required ReadingSettingsType readingSettings}) async {
+    final box = Hive.lazyBox<EpubBookType>(HiveBoxCollections.epubBookBoxKey);
+    String title = ePub.title!.split("/")[2].split(".epub").join();
+    String key = "${ePub.id!}_$title";
+
+    EpubBookType? currentBook = await box.get(key);
+    final updateBook = currentBook!.copyWith(
+        readingSettings: readingSettings,
+        horizontalReadingPageProgress:
+            readingProgress.horizontalReadingPageProgress,
+        verticalReadingParagraphProgress:
+            readingProgress.verticalReadingParagraphProgress);
+    await box.put(key, updateBook);
   }
 
   Future<void> saveEpubBook({required EpubBookModel ePub}) async {

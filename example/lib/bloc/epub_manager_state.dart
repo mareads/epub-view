@@ -42,9 +42,11 @@ class EpubManagerState extends Equatable {
     this.downloadPercent = const {0: 0},
     this.removePercent = const {0: 0},
     this.updatePercent = 0,
+    this.readingProgress = const ReadingProgress(),
   });
 
   final EpubManagerStatus status;
+  final ReadingProgress readingProgress;
   final List<EpubBookModel> ePubs;
   final Map<int, double> downloadPercent; // Map<ePubId, Download-Percent>
   final Map<int, double> removePercent;
@@ -56,6 +58,7 @@ class EpubManagerState extends Equatable {
     Map<int, double>? downloadPercent,
     Map<int, double>? removePercent,
     double? updatePercent,
+    ReadingProgress? readingProgress,
   }) {
     return EpubManagerState(
       status: status ?? this.status,
@@ -63,9 +66,17 @@ class EpubManagerState extends Equatable {
       downloadPercent: downloadPercent ?? this.downloadPercent,
       removePercent: removePercent ?? this.removePercent,
       updatePercent: updatePercent ?? this.updatePercent,
+      readingProgress: readingProgress ?? this.readingProgress,
     );
   }
 
   @override
-  List<Object?> get props => [status, ePubs, downloadPercent, removePercent, updatePercent];
+  List<Object?> get props => [
+        status,
+        ePubs,
+        downloadPercent,
+        removePercent,
+        updatePercent,
+        readingProgress
+      ];
 }

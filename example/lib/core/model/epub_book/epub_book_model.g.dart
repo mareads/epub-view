@@ -13,12 +13,17 @@ EpubBookModel _$EpubBookModelFromJson(Map<String, dynamic> json) =>
       updateTime: json['updateTime'] as String?,
       file: FileConverter.getFile(json['file']),
       isDownloaded: json['isDownloaded'] as bool?,
+      readingProgress: json['readingProgress'] == null
+          ? null
+          : ReadingProgress.fromJson(
+              json['readingProgress'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$EpubBookModelToJson(EpubBookModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
+      'readingProgress': instance.readingProgress,
       'updateTime': instance.updateTime,
       'file': FileConverter.getBytes(instance.file),
       'isDownloaded': instance.isDownloaded,

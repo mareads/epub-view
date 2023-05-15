@@ -37,3 +37,7 @@ extension ExtensionFontFamily on EpubFontFamily {
     }
   }
 }
+
+EpubFontFamily? epubFontFamilyFromString(String name) {
+  return EpubFontFamily.values.firstWhere((element) => element.name == name);
+}

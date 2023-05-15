@@ -2,7 +2,6 @@ import 'package:epub_view/epub_view.dart';
 import 'package:epub_view_example/bloc/epub_manager_bloc.dart';
 import 'package:epub_view_example/epub_list.dart';
 import 'package:epub_view_example/service/hive/hive_service.dart';
-import 'package:epub_view_example/service/local_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, SystemUiOverlayStyle;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -40,7 +39,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Brightness get platformBrightness =>
-      MediaQueryData.fromWindow(WidgetsBinding.instance.window).platformBrightness;
+      MediaQueryData.fromWindow(WidgetsBinding.instance.window)
+          .platformBrightness;
 
   void _setSystemUIOverlayStyle() {
     if (platformBrightness == Brightness.light) {
@@ -101,7 +101,6 @@ class MyHomePage extends StatelessWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
   @override
-
   Widget build(BuildContext context) => Scaffold(
         // appBar: AppBar(
         //   title: EpubViewActualChapter(

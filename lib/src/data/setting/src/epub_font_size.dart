@@ -52,3 +52,7 @@ extension ExtensionEpubFontSize on EpubFontSize {
     }
   }
 }
+
+EpubFontSize? epubFontSizeFromString(String name) {
+  return EpubFontSize.values.firstWhere((element) => element.name == name);
+}

@@ -8,10 +8,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'navigator_button.dart';
 
 class EpubAppBar extends StatelessWidget {
-  const EpubAppBar({
-    Key? key,
-    required this.animation,
-  }) : super(key: key);
+  final Function handleOnDisposeReader;
+  const EpubAppBar(
+      {Key? key, required this.animation, required this.handleOnDisposeReader})
+      : super(key: key);
 
   final Animation<double> animation;
 
@@ -43,7 +43,10 @@ class EpubAppBar extends StatelessWidget {
                         icon: "assets/images/back_icon@3x.png",
                         iconSize: const Size.fromHeight(24),
                         alignment: Alignment.center,
-                        onTap: () => Navigator.pop(context),
+                        onTap: () async {
+                          await handleOnDisposeReader();
+                          Navigator.pop(context);
+                        },
                       ),
                       const SizedBox(width: 20),
                       InkWell(

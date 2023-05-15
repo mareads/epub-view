@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:epub_view/epub_view.dart';
 import 'package:epub_view/src/data/setting/theme_setting.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,8 +11,12 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 import '../../data/setting/src/reader_mode.dart';
 
-class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
-  ReaderSettingCubit() : super(const ReaderSettingState.init());
+class ReaderSettingCubit extends Cubit<ReaderSettingState> {
+  ReaderSettingCubit({ReadingSettings? initReadingSettings})
+      : super(initReadingSettings != null
+            ? ReaderSettingState.initFromReaderSettings(
+                readingSetting: initReadingSettings)
+            : const ReaderSettingState.init());
 
   void onThemeChanged(EpubThemeMode mode) =>
       emit(state.copyWith(themeMode: mode));
@@ -147,6 +154,18 @@ class ReaderSettingState extends Equatable {
         : 0;
   }
 
+  static initFromReaderSettings({required ReadingSettings readingSetting}) {
+    return ReaderSettingState(
+        themeMode: readingSetting.themeMode ?? EpubThemeMode.light,
+        isShowToc: true,
+        isShowSettingSection: false,
+        isShowChaptersSection: false,
+        fontFamily: readingSetting.fontFamily ?? EpubFontFamily.sarabun,
+        fontSize: readingSetting.fontSize ?? EpubFontSize.normal,
+        readerMode: readingSetting.readerMode ?? ReaderMode.horizontal,
+        lineHeight: readingSetting.lineHeight ?? EpubLineHeight.factor_1_5);
+  }
+
   num get scrollProgressPercentage {
     return (scrollProgressRatio * 100).ceil().toInt();
   }
@@ -161,19 +180,20 @@ class ReaderSettingState extends Equatable {
     bool? isShowToc,
     bool? isShowChaptersSection,
     bool? isShowSettingSection,
-  }) =>
-      ReaderSettingState(
-        themeMode: themeMode ?? this.themeMode,
-        isShowToc: isShowToc ?? this.isShowToc,
-        isShowChaptersSection:
-            isShowChaptersSection ?? this.isShowChaptersSection,
-        isShowSettingSection: isShowSettingSection ?? this.isShowSettingSection,
-        readerMode: readerMode ?? this.readerMode,
-        scrollNotification: scrollNotification ?? this.scrollNotification,
-        fontFamily: fontFamily ?? this.fontFamily,
-        fontSize: fontSize ?? this.fontSize,
-        lineHeight: lineHeight ?? this.lineHeight,
-      );
+  }) {
+    return ReaderSettingState(
+      themeMode: themeMode ?? this.themeMode,
+      isShowToc: isShowToc ?? this.isShowToc,
+      isShowChaptersSection:
+          isShowChaptersSection ?? this.isShowChaptersSection,
+      isShowSettingSection: isShowSettingSection ?? this.isShowSettingSection,
+      readerMode: readerMode ?? this.readerMode,
+      scrollNotification: scrollNotification ?? this.scrollNotification,
+      fontFamily: fontFamily ?? this.fontFamily,
+      fontSize: fontSize ?? this.fontSize,
+      lineHeight: lineHeight ?? this.lineHeight,
+    );
+  }
 
   @override
   List<Object?> get props => [

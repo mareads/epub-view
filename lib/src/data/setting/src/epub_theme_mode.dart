@@ -26,3 +26,7 @@ extension ExtensionEpubThemeMode on EpubThemeMode {
     }
   }
 }
+
+EpubThemeMode? epubThemeModeFromString(String name) {
+  return EpubThemeMode.values.firstWhere((element) => element.name == name);
+}
