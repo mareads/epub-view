@@ -46,21 +46,19 @@ class EpubBookBox {
     return book!;
   }
 
-  Future<void> saveProgressEpubBook(
-      {required EpubBookModel ePub,
-      required ReadingProgress readingProgress,
-      required ReadingSettingsType readingSettings}) async {
+  Future<void> saveProgressEpubBook({
+    required EpubBookModel ePub,
+    required ReadingProgress readingProgress,
+    // required ReadingSettingsType readingSettings
+  }) async {
     final box = Hive.lazyBox<EpubBookType>(HiveBoxCollections.epubBookBoxKey);
     String title = ePub.title!.split("/")[2].split(".epub").join();
     String key = "${ePub.id!}_$title";
 
     EpubBookType? currentBook = await box.get(key);
     final updateBook = currentBook!.copyWith(
-        readingSettings: readingSettings,
-        horizontalReadingPageProgress:
-            readingProgress.horizontalReadingPageProgress,
-        verticalReadingParagraphProgress:
-            readingProgress.verticalReadingParagraphProgress);
+        // readingSettings: readingSettings,
+        readingParagraphProgress: readingProgress.readingParagraphProgress);
     await box.put(key, updateBook);
   }
 

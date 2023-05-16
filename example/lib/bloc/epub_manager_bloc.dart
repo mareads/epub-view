@@ -55,24 +55,22 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
         ePubs[i] = ePubs[i].copyWith(
             isDownloaded: isDownloaded,
             file: newFile,
+            // readingSettings: ReadingSettings(
+            //     readerMode: readerModeFromString(
+            //         currentEpub.readingSettings?.readerMode?.name ??
+            //             ReaderMode.vertical.name),
+            //     fontSize: epubFontSizeFromString(currentEpub.readingSettings?.fontSize?.name ??
+            //         EpubFontSize.normal.name),
+            //     fontFamily: epubFontFamilyFromString(
+            //         currentEpub.readingSettings?.fontFamily?.name ??
+            //             EpubFontFamily.sarabun.name),
+            //     lineHeight: EpubLineHeight.epubLineHeightFromString(
+            //         currentEpub.readingSettings?.lineHeight?.name ??
+            //             EpubLineHeight.factor_1_5.type.name),
+            //     themeMode: epubThemeModeFromString(currentEpub.readingSettings?.themeMode?.name ?? EpubThemeMode.light.name)),
             readingProgress: ReadingProgress(
-                verticalReadingParagraphProgress:
-                    currentEpub.verticalReadingParagraphProgress,
-                horizontalReadingPageProgress:
-                    currentEpub.horizontalReadingPageProgress),
-            readingSettings: ReadingSettings(
-                readerMode: readerModeFromString(
-                    currentEpub.readingSettings?.readerMode?.name ??
-                        ReaderMode.vertical.name),
-                fontSize: epubFontSizeFromString(
-                    currentEpub.readingSettings?.fontSize?.name ??
-                        EpubFontSize.normal.name),
-                fontFamily: epubFontFamilyFromString(
-                    currentEpub.readingSettings?.fontFamily?.name ??
-                        EpubFontFamily.sarabun.name),
-                lineHeight: EpubLineHeight.epubLineHeightFromString(
-                    currentEpub.readingSettings?.lineHeight?.name ?? EpubLineHeight.factor_1_5.type.name),
-                themeMode: epubThemeModeFromString(currentEpub.readingSettings?.themeMode?.name ?? EpubThemeMode.light.name)));
+                readingParagraphProgress:
+                    currentEpub.readingParagraphProgress));
       }
     }
 

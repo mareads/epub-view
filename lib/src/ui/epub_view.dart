@@ -4,10 +4,11 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:epub_view/src/data/setting/src/reader_mode.dart';
+import 'package:epub_view/src/models/horizontal_paragraph.dart';
 import 'package:epub_view/src/models/paragraph_progress.dart';
 import 'package:epub_view/src/ui/reader_section.dart';
 import 'package:epub_view/src/ui/widgets/epub_contents.dart';
+import 'package:epub_view/src/ui/widgets/pageview_reading_builder.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epub_view/src/data/epub_cfi_reader.dart';
@@ -81,9 +82,9 @@ class EpubView extends StatefulWidget {
   final void Function(EpubBook document)? onDocumentLoaded;
 
   /// Called when a Epub reader was disposed
-  final Future<void> Function(
-      {required ReadingProgress readingProgress,
-      required ReadingSettings readingSettings})? onEpubExit;
+  final Future<void> Function({
+    required ReadingProgress readingProgress,
+  })? onEpubExit;
 
   /// Called when a document loading error
   final void Function(Exception? error)? onDocumentError;
@@ -106,13 +107,13 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   EpubCfiReader? _epubCfiReader;
   EpubChapterViewValue? _currentValue;
   final _chapterIndexes = <int>[];
-  late PageController _pageController;
+  PageController? _pageController;
   final List<int> _chapterPageList = [0];
   // Theme/Setting and Progress-Bar
 
   late final AnimationController _appBarAnimationController;
-  int? horizontalReadingPageProgress;
-  int? verticalReadingParagraphProgress;
+  int? readingParagraphProgress;
+  List<HorizontalParagraph>? horizontalParagraphs;
   ReadingSettings? readingSettings;
   late final Animation<double> _appBarAnimation;
   late final AnimationController _themeSettingAnimationController;
@@ -124,10 +125,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-        initialPage:
-            widget.initReadingProgress?.horizontalReadingPageProgress ?? 0);
-    _pageController.addListener(_pageViewChangeListener);
+
     _itemScrollController = ItemScrollController();
     _itemPositionListener = ItemPositionsListener.create();
 
@@ -177,17 +175,15 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   Future<void> _handleOnDisposeReader() async {
     if (widget.onEpubExit != null) {
       await widget.onEpubExit!(
-          readingSettings: readingSettings ?? const ReadingSettings(),
+          // readingSettings: readingSettings ?? const ReadingSettings(),
           readingProgress: ReadingProgress(
-              horizontalReadingPageProgress: horizontalReadingPageProgress,
-              verticalReadingParagraphProgress:
-                  verticalReadingParagraphProgress));
+        readingParagraphProgress: readingParagraphProgress,
+      ));
     }
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
     _itemPositionListener!.itemPositions.removeListener(_changeListener);
     _controller._detach();
     _appBarAnimationController.dispose();
@@ -222,24 +218,33 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   }
 
   void _pageViewChangeListener() {
-    final page = _pageController.page!.floor();
-    if (page == _pageController.page) {
-      horizontalReadingPageProgress = page;
+    final page = _pageController!.page!.floor();
+    if (page == _pageController!.page) {
       int countIndex = 0;
       final chapterIndex = _chapterPageList.fold<int>(0, (all, sum) {
         int chapterIndex = page >= sum ? countIndex : all;
         countIndex++;
         return chapterIndex;
       });
-      final position = _itemPositionListener!.itemPositions.value.first;
+      // final position = _itemPositionListener!.itemPositions.value.first;
+
       _currentValue = EpubChapterViewValue(
         onHorizontalPageChange: onHorizontalPageChange,
         chapter: chapterIndex >= 0 ? _chapters[chapterIndex] : null,
         chapterNumber: chapterIndex + 1,
         paragraphNumber: 0,
-        position: position,
+        position: ItemPosition(
+            index: 1,
+            itemLeadingEdge:
+                horizontalParagraphs![page].leadingParagraphNumber!.toDouble(),
+            itemTrailingEdge:
+                horizontalParagraphs![page].endingParagraphNumber!.toDouble()),
         currentAllParagraphIndex: 0,
       );
+
+      readingParagraphProgress =
+          horizontalParagraphs?[page].leadingParagraphNumber;
+
 
       _controller.currentValueListenable.value = _currentValue;
       widget.onChapterChanged?.call(_currentValue);
@@ -292,28 +297,32 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       currentAllParagraphIndex: currentParagraphIndex,
       position: position,
     );
-    verticalReadingParagraphProgress = currentLeadingParagraphIndex;
+    readingParagraphProgress = currentLeadingParagraphIndex;
 
     _controller.currentValueListenable.value = _currentValue;
     widget.onChapterChanged?.call(_currentValue);
   }
 
   void onHorizontalPageChange({required int chapterId}) {
-    _pageController.animateToPage(
+    _pageController!.animateToPage(
       _chapterPageList[chapterId],
       curve: Curves.easeIn,
       duration: const Duration(milliseconds: 500),
     );
   }
 
-  Future<List<dom.Element>> paragraphsToPagesHandler(List<Paragraph> paragraphs,
-      ReaderSettingState state, EdgeInsetsGeometry padding) async {
+  Future<List<HorizontalParagraph>> paragraphsToPagesHandler(
+      List<Paragraph> paragraphs,
+      ReaderSettingState state,
+      EdgeInsetsGeometry padding) async {
     /// reset for each run
     _chapterPageList.clear();
     _chapterPageList.add(0);
 
-    final List<dom.Element> pages = [];
+    final List<HorizontalParagraph> pages = [];
     final List<String> elements = [];
+    HorizontalParagraph currentHorizontalParagraph = const HorizontalParagraph(
+        leadingParagraphNumber: 0, endingParagraphNumber: null, elements: null);
     int currentChapter = 0;
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
@@ -330,6 +339,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     const indentCount = 8;
     final indentDartString = " " * indentCount;
     final indentHtmlString = "&nbsp;" * indentCount;
+    int paragraphCount = 0;
 
     for (final paragraph in paragraphs) {
       if (paragraph.element.nodeType == dom.Node.ELEMENT_NODE) {
@@ -404,9 +414,13 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
         if ((currentPageHeight + paintHeight! > maxScreenHeight) ||
             isNewChapter) {
-          pages.add(dom.Element.html(
-              '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+          pages.add(currentHorizontalParagraph.copyWith(
+              endingParagraphNumber: paragraphCount,
+              elements: dom.Element.html(
+                  '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
           elements.clear();
+          currentHorizontalParagraph =
+              HorizontalParagraph(leadingParagraphNumber: paragraphCount + 1);
           currentPageHeight = 0;
           if (isNewChapter) {
             _chapterPageList.add(pages.length);
@@ -420,12 +434,17 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         currentChapter = paragraph.chapterIndex;
 
         if (paragraph == paragraphs.last) {
-          pages.add(dom.Element.html(
-              '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>'));
+          pages.add(currentHorizontalParagraph.copyWith(
+              endingParagraphNumber: paragraphCount,
+              elements: dom.Element.html(
+                  '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
           elements.clear();
+          currentHorizontalParagraph =
+              HorizontalParagraph(leadingParagraphNumber: paragraphCount + 1);
           currentPageHeight = 0;
         }
       }
+      paragraphCount++;
     }
     return pages;
   }
@@ -689,10 +708,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   Widget _buildLoaded(BuildContext context) {
     return ScrollablePositionedList.builder(
       shrinkWrap: widget.shrinkWrap,
-      initialScrollIndex:
-          widget.initReadingProgress!.verticalReadingParagraphProgress ??
-              _epubCfiReader!.paragraphIndexByCfiFragment ??
-              0,
+      initialScrollIndex: readingParagraphProgress ??
+          widget.initReadingProgress!.readingParagraphProgress ??
+          _epubCfiReader!.paragraphIndexByCfiFragment ??
+          0,
       itemCount: _paragraphs.length,
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionListener,
@@ -725,8 +744,11 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             widget.builders as EpubViewBuilders<DefaultBuilderOptions>;
         DefaultBuilderOptions options = defaultBuilder.options;
         final padding = options.paragraphPadding;
-        Future<List<dom.Element>> pages =
+        Future<List<HorizontalParagraph>> pages =
             paragraphsToPagesHandler(_paragraphs, state, padding);
+        pages.then((value) {
+          horizontalParagraphs = value;
+        });
         final headerFontStyle = Style().merge(Style.fromTextStyle(
           TextStyle(
             height: state.lineHeight.value,
@@ -748,11 +770,11 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             final bottomTapableHeight = tapableHeight - box.size.height * 0.2;
             if (y < topTapableHeight && y > bottomTapableHeight) {
               if (x < box.size.width / 2) {
-                _pageController.previousPage(
+                _pageController!.previousPage(
                     duration: const Duration(milliseconds: 100),
                     curve: Curves.linear);
               } else {
-                _pageController.nextPage(
+                _pageController!.nextPage(
                     duration: const Duration(milliseconds: 100),
                     curve: Curves.linear);
               }
@@ -760,64 +782,90 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               ctx.read<ReaderSettingCubit>().onToggleAppBar();
             }
           },
-          child: FutureBuilder<List<dom.Element>>(
+          child: FutureBuilder<List<HorizontalParagraph>>(
               future: pages,
               builder: (context, snap) {
-                return snap.data != null
-                    ? PageView(
-                        controller: _pageController,
-                        children: snap.data!
-                            .map(
-                              (element) => Padding(
-                                padding: padding,
-                                child: Center(
-                                  child: Html(
-                                    data: element.outerHtml,
-                                    // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-                                    style: {
-                                      'h1': headerFontStyle,
-                                      'h2': headerFontStyle,
-                                      'h3': headerFontStyle,
-                                      'h4': headerFontStyle,
-                                      'html': Style().merge(Style.fromTextStyle(
-                                        TextStyle(
-                                          height: state.lineHeight.value,
-                                          fontWeight: FontWeight.w300,
-                                          fontFamily: state.fontFamily.family,
-                                          fontSize: state.fontFamily.isJsJindara
-                                              ? state.fontSize.dataJs
-                                              : state.fontSize.data,
-                                          color: state.themeMode.data.textColor,
-                                        ),
-                                      )),
-                                    },
-                                    customRenders: {
-                                      tagMatcher('img'): CustomRender.widget(
-                                          widget: (context, buildChildren) {
-                                        final url = context
-                                            .tree.element!.attributes['src']!
-                                            .replaceAll('../', '');
-                                        return Image(
-                                          image: MemoryImage(
-                                            Uint8List.fromList(
-                                              widget
-                                                  .controller
-                                                  ._document!
-                                                  .Content!
-                                                  .Images![url]!
-                                                  .Content!,
+                if (snap.data != null) {
+                  if (widget.initReadingProgress?.readingParagraphProgress !=
+                      null) {
+                    final readingProgress = readingParagraphProgress ??
+                        widget.initReadingProgress!.readingParagraphProgress!;
+                    final initialPage = horizontalParagraphs?.indexWhere(
+                        (element) =>
+                            readingProgress >=
+                                element.leadingParagraphNumber! &&
+                            readingProgress <= element.endingParagraphNumber!);
+                    return PageViewReadingBuilder(
+                        initialPage: initialPage!,
+                        pageViewListener: _pageViewChangeListener,
+                        onMount: (PageController pageController) {
+                          _pageController = pageController;
+                        },
+                        builder: (BuildContext context,
+                            PageController pageController) {
+                          return PageView(
+                            controller: _pageController,
+                            children: snap.data!
+                                .map(
+                                  (element) => Padding(
+                                    padding: padding,
+                                    child: Center(
+                                      child: Html(
+                                        data: element.elements?.outerHtml,
+                                        // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+                                        style: {
+                                          'h1': headerFontStyle,
+                                          'h2': headerFontStyle,
+                                          'h3': headerFontStyle,
+                                          'h4': headerFontStyle,
+                                          'html':
+                                              Style().merge(Style.fromTextStyle(
+                                            TextStyle(
+                                              height: state.lineHeight.value,
+                                              fontWeight: FontWeight.w300,
+                                              fontFamily:
+                                                  state.fontFamily.family,
+                                              fontSize:
+                                                  state.fontFamily.isJsJindara
+                                                      ? state.fontSize.dataJs
+                                                      : state.fontSize.data,
+                                              color: state
+                                                  .themeMode.data.textColor,
                                             ),
-                                          ),
-                                        );
-                                      }),
-                                    },
+                                          )),
+                                        },
+                                        customRenders: {
+                                          tagMatcher('img'):
+                                              CustomRender.widget(widget:
+                                                  (context, buildChildren) {
+                                            final url = context.tree.element!
+                                                .attributes['src']!
+                                                .replaceAll('../', '');
+                                            return Image(
+                                              image: MemoryImage(
+                                                Uint8List.fromList(
+                                                  widget
+                                                      .controller
+                                                      ._document!
+                                                      .Content!
+                                                      .Images![url]!
+                                                      .Content!,
+                                                ),
+                                              ),
+                                            );
+                                          }),
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      )
-                    : const Text("Loading...");
+                                )
+                                .toList(),
+                          );
+                        });
+                  }
+                }
+
+                return const Text("Loading...");
               }),
         );
       },
@@ -870,9 +918,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-            create: (_) => ReaderSettingCubit(
-                initReadingSettings: widget.initReadingSettings)),
+        BlocProvider(create: (_) => ReaderSettingCubit()),
       ],
       child: SafeArea(
         child: BlocListener<ReaderSettingCubit, ReaderSettingState>(

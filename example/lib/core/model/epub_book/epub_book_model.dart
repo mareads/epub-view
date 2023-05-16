@@ -11,7 +11,7 @@ class EpubBookModel {
   final int? id;
   final String? title;
   final ReadingProgress? readingProgress;
-  final ReadingSettings? readingSettings;
+  // final ReadingSettings? readingSettings;
   final String? updateTime;
   @JsonKey(
       name: "file",
@@ -20,14 +20,15 @@ class EpubBookModel {
   File? file;
   final bool? isDownloaded;
 
-  EpubBookModel(
-      {this.id,
-      this.title,
-      this.updateTime,
-      this.file,
-      this.isDownloaded,
-      this.readingProgress,
-      this.readingSettings});
+  EpubBookModel({
+    this.id,
+    this.title,
+    this.updateTime,
+    this.file,
+    this.isDownloaded,
+    this.readingProgress,
+    // this.readingSettings
+  });
 
   EpubBookModel copyWith({
     int? id,
@@ -36,7 +37,7 @@ class EpubBookModel {
     File? file,
     bool? isDownloaded,
     ReadingProgress? readingProgress,
-    ReadingSettings? readingSettings,
+    // ReadingSettings? readingSettings,
   }) {
     return EpubBookModel(
       id: id ?? this.id,
@@ -45,7 +46,7 @@ class EpubBookModel {
       file: file ?? this.file,
       isDownloaded: isDownloaded ?? this.isDownloaded,
       readingProgress: readingProgress ?? this.readingProgress,
-      readingSettings: readingSettings ?? this.readingSettings,
+      // readingSettings: readingSettings ?? this.readingSettings,
     );
   }
 

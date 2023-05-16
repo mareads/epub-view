@@ -156,27 +156,26 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
     super.dispose();
   }
 
-  Future<void> _onEpubExit(
-      {required ReadingProgress readingProgress,
-      required ReadingSettings readingSettings}) async {
+  Future<void> _onEpubExit({
+    required ReadingProgress readingProgress,
+  }) async {
     await EpubBookBox().saveProgressEpubBook(
-        ePub: widget.epubBook,
-        readingProgress: ReadingProgress(
-            horizontalReadingPageProgress:
-                readingProgress.horizontalReadingPageProgress,
-            verticalReadingParagraphProgress:
-                readingProgress.verticalReadingParagraphProgress),
-        readingSettings: ReadingSettingsType(
-            readerMode:
-                readerModeEnumTypeFromString(readingSettings.readerMode!.name),
-            fontSize:
-                fontSizeEnumTypeFromString(readingSettings.fontSize!.name),
-            fontFamily:
-                fontFamilyEnumTypeFromString(readingSettings.fontFamily!.name),
-            lineHeight: lineHeightEnumTypeFromString(
-                readingSettings.lineHeight!.type.name),
-            themeMode:
-                themeModeEnumTypeFromString(readingSettings.themeMode!.name)));
+      ePub: widget.epubBook,
+      readingProgress: ReadingProgress(
+        readingParagraphProgress: readingProgress.readingParagraphProgress,
+      ),
+      // readingSettings: ReadingSettingsType(
+      //     readerMode:
+      //         readerModeEnumTypeFromString(readingSettings.readerMode!.name),
+      //     fontSize:
+      //         fontSizeEnumTypeFromString(readingSettings.fontSize!.name),
+      //     fontFamily:
+      //         fontFamilyEnumTypeFromString(readingSettings.fontFamily!.name),
+      //     lineHeight: lineHeightEnumTypeFromString(
+      //         readingSettings.lineHeight!.type.name),
+      //     themeMode:
+      //         themeModeEnumTypeFromString(readingSettings.themeMode!.name))
+    );
 
     context.read<EpubManagerBloc>().add(FetchEpubBooksEvent());
   }
@@ -187,7 +186,7 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
       body: EpubView(
         initReadingProgress: widget.epubBook.readingProgress,
         onEpubExit: _onEpubExit,
-        initReadingSettings: widget.epubBook.readingSettings,
+        // initReadingSettings: widget.epubBook.readingSettings,
         builders: EpubViewBuilders<DefaultBuilderOptions>(
             options: const DefaultBuilderOptions(
               textStyle: TextStyle(

@@ -11,12 +11,8 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 import '../../data/setting/src/reader_mode.dart';
 
-class ReaderSettingCubit extends Cubit<ReaderSettingState> {
-  ReaderSettingCubit({ReadingSettings? initReadingSettings})
-      : super(initReadingSettings != null
-            ? ReaderSettingState.initFromReaderSettings(
-                readingSetting: initReadingSettings)
-            : const ReaderSettingState.init());
+class ReaderSettingCubit extends HydratedCubit<ReaderSettingState> {
+  ReaderSettingCubit() : super(const ReaderSettingState.init());
 
   void onThemeChanged(EpubThemeMode mode) =>
       emit(state.copyWith(themeMode: mode));
@@ -90,6 +86,7 @@ class ReaderSettingCubit extends Cubit<ReaderSettingState> {
 
   @override
   ReaderSettingState? fromJson(Map<String, dynamic> json) {
+    final readerMode = ReaderMode.values.byName(json['readerMode']);
     final themeMode = EpubThemeMode.values.byName(json['themeModeKey']);
     final fontFamily = EpubFontFamily.values.byName(json['fontFamilyKey']);
     final fontSize = EpubFontSize.values.byName(json['fontSizeKey']);
@@ -100,6 +97,7 @@ class ReaderSettingCubit extends Cubit<ReaderSettingState> {
       fontFamily: fontFamily,
       fontSize: fontSize,
       lineHeight: lineHeight,
+      readerMode: readerMode,
     );
   }
 
@@ -109,6 +107,7 @@ class ReaderSettingCubit extends Cubit<ReaderSettingState> {
         'fontFamilyKey': state.fontFamily.name,
         'fontSizeKey': state.fontSize.name,
         'lineHeightKey': state.lineHeight.type.name,
+        'readerMode': state.readerMode.name,
       };
 }
 
