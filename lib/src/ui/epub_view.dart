@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:math';
+import 'dart:developer' as dev;
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -196,6 +196,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     if (_controller.isBookLoaded.value) {
       return true;
     }
+
     _chapters = parseChapters(_controller._document!);
     final parseParagraphsResult =
         parseParagraphs(_chapters, _controller._document!.Content);
@@ -244,7 +245,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
       readingParagraphProgress =
           horizontalParagraphs?[page].leadingParagraphNumber;
-
 
       _controller.currentValueListenable.value = _currentValue;
       widget.onChapterChanged?.call(_currentValue);
@@ -327,11 +327,15 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     double currentPageHeight = 0;
-    final safeAreaPixel = MediaQuery.of(context).padding.top +
+    final verticalSafeAreaPixel = MediaQuery.of(context).padding.top +
         MediaQuery.of(context).padding.bottom;
-    final paddingWidth = padding.horizontal * 2;
+    final horizontalSafeAreaPixel = MediaQuery.of(context).padding.left +
+        MediaQuery.of(context).padding.right;
+    final paddingWidth = (padding.horizontal * 2) + horizontalSafeAreaPixel;
+
     final maxScreenHeight =
-        screenHeight - safeAreaPixel - (padding.vertical * 2);
+        screenHeight - verticalSafeAreaPixel - (padding.vertical * 2);
+
     double? paintHeight;
     final fontSize = state.fontFamily.isJsJindara
         ? state.fontSize.dataJs
@@ -340,112 +344,188 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     final indentDartString = " " * indentCount;
     final indentHtmlString = "&nbsp;" * indentCount;
     int paragraphCount = 0;
+    dom.Element? imageResizedElement;
 
     for (final paragraph in paragraphs) {
       if (paragraph.element.nodeType == dom.Node.ELEMENT_NODE) {
-        final isNewChapter = currentChapter != paragraph.chapterIndex;
-        final isImageTag = paragraph.element.localName == "img";
-        if (isImageTag) {
-          Completer<Size> completer = Completer();
-          final url =
-              paragraph.element.attributes["src"]!.replaceAll('../', '');
+        elementPagingHandler({required Paragraph currentParagraph}) async {
+          final isNewChapter = currentChapter != currentParagraph.chapterIndex;
+          final isImageTag = currentParagraph.element.localName == "img";
+          if (isImageTag) {
+            // print("IMAGE: Paragraph");
+            Completer<Size> completer = Completer();
+            final url = currentParagraph.element.attributes["src"]!
+                .replaceAll('../', '');
 
-          Image image = Image(
-            image: MemoryImage(
-              Uint8List.fromList(
-                widget.controller._document!.Content!.Images![url]!.Content!,
+            Image image = Image(
+              image: MemoryImage(
+                Uint8List.fromList(
+                  widget.controller._document!.Content!.Images![url]!.Content!,
+                ),
               ),
-            ),
-          );
-          image.image.resolve(const ImageConfiguration()).addListener(
-            ImageStreamListener(
-              (ImageInfo image, bool synchronousCall) {
-                var myImage = image.image;
-                Size size =
-                    Size(myImage.width.toDouble(), myImage.height.toDouble());
-                completer.complete(size);
-              },
-            ),
-          );
-          final Size imageSize = await completer.future;
-          if (imageSize.width > screenWidth - paddingWidth) {
-            final diffRatio = (imageSize.width - (screenWidth - paddingWidth)) /
-                imageSize.width;
-            paintHeight = ((imageSize.height * diffRatio) - imageSize.height) +
-                fontSize * 2;
+            );
+            image.image.resolve(const ImageConfiguration()).addListener(
+              ImageStreamListener(
+                (ImageInfo image, bool synchronousCall) {
+                  var myImage = image.image;
+                  Size size =
+                      Size(myImage.width.toDouble(), myImage.height.toDouble());
+                  completer.complete(size);
+                },
+              ),
+            );
+            final Size imageSize = await completer.future;
+            if (imageSize.width > screenWidth - paddingWidth) {
+              print("imageSize.width > screenWidth");
+              print(imageSize.height);
+              final diffRatio =
+                  (imageSize.width - (screenWidth - paddingWidth)) /
+                      imageSize.width;
+              paintHeight =
+                  (imageSize.height - (imageSize.height * diffRatio)) +
+                      fontSize * 2;
+            } else {
+              // print("else : imageSize.height");
+              // print(imageSize.height);
+              paintHeight = imageSize.height + fontSize * 2;
+            }
+            if (paintHeight! > maxScreenHeight) {
+              // print("paintHeight! > maxScreenHeight");
+              imageResizedElement = dom.Element.html(
+                  currentParagraph.element.outerHtml.replaceFirst('<img ',
+                      "<img style='height: ${maxScreenHeight - 100}px;object-fit: contain;'"));
+              paintHeight = maxScreenHeight - 100;
+              // print("image paintHeight! $paintHeight");
+            }
           } else {
-            paintHeight = imageSize.height + fontSize * 2;
-          }
-        } else {
-          final String text = paragraph.element.text.trim();
-          if (text.isNotEmpty) {
-            final TextSpan span = TextSpan(
-              text: isNewChapter ? text : "$indentDartString$text",
-              style: TextStyle(
-                height: state.lineHeight.value,
-                fontWeight: FontWeight.w300,
-                fontFamily: state.fontFamily.family,
-                fontSize: fontSize,
-                color: state.themeMode.data.textColor,
-              ),
-            );
-            final TextPainter painter = TextPainter(
-              text: span,
-              textAlign: TextAlign.left,
-              textDirection: TextDirection.ltr,
-            );
+            final String text = currentParagraph.element.text.trim();
+            // inspect("--------------------------------");
+            // inspect("TEXT: Paragraph");
+            // inspect(text);
+            // inspect("paragraph.element");
+            // inspect(paragraph.element);
+            if (text.isNotEmpty) {
+              final TextSpan span = TextSpan(
+                text: isNewChapter ? text : "$indentDartString$text",
+                style: TextStyle(
+                  height: state.lineHeight.value,
+                  fontWeight: FontWeight.w300,
+                  fontFamily: state.fontFamily.family,
+                  fontSize: fontSize,
+                  color: state.themeMode.data.textColor,
+                ),
+              );
+              final TextPainter painter = TextPainter(
+                text: span,
+                textAlign: TextAlign.left,
+                textDirection: TextDirection.ltr,
+              );
 
-            painter.layout(maxWidth: screenWidth - paddingWidth);
-            // print("--------");
-            // print("text");
-            // print(span.text);
-            // print("painter lines");
-            // print(painter.computeLineMetrics().length);
-            // print("currentPageHeight");
-            // print(currentPageHeight);
-            // print("maxScreenHeight");
-            // print(maxScreenHeight);
-            // print("--------");
+              painter.layout(maxWidth: screenWidth - paddingWidth);
+              // print("--------");
+              // print("text");
+              // print(span.text);
+              // print("painter lines");
+              // print(painter.computeLineMetrics().length);
+              // print("currentPageHeight");
+              // print(currentPageHeight);
+              // print("maxScreenHeight");
+              // print(maxScreenHeight);
+              // print("--------");
 
-            /// add paragraph margin spacing to calculate formular
-            paintHeight = painter.height + fontSize * 2;
+              /// add paragraph margin spacing to calculate formular
+              paintHeight = painter.height + fontSize * 2;
+            } else {
+              paintHeight = 0;
+            }
           }
+          // print("paintHeight");
+          // print(paintHeight);
+          // print("currentParagraph.text");
+          // print(currentParagraph.element.text);
+
+          if (((currentPageHeight + paintHeight! > maxScreenHeight) ||
+                  isNewChapter) &&
+              elements.isNotEmpty) {
+            pages.add(currentHorizontalParagraph.copyWith(
+                endingParagraphNumber: paragraphCount,
+                elements: dom.Element.html(
+                    '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
+            elements.clear();
+            currentHorizontalParagraph =
+                HorizontalParagraph(leadingParagraphNumber: paragraphCount + 1);
+            currentPageHeight = 0;
+            if (isNewChapter) {
+              _chapterPageList.add(pages.length);
+            }
+          }
+
+          // debugPrint("paintHeight! > maxScreenHeight");
+          // debugPrint(paintHeight.toString());
+          // debugPrint(maxScreenHeight.toString());
+
+          /// Paragraph Cutting section with recursively mechanism
+          if (paintHeight! > maxScreenHeight) {
+            final overflowHeight = paintHeight! - maxScreenHeight;
+
+            /// 0.8 is tolerant ratio of 0.2 reduction
+            final newFitHeightRatio =
+                (1 - (overflowHeight / paintHeight!)) * 0.8;
+            final cutIndex =
+                (currentParagraph.element.nodes.length * newFitHeightRatio)
+                    .floor();
+            final newFitParagraph = dom.Element.html(
+                '<p>${currentParagraph.element.nodes.sublist(0, cutIndex).fold<String>('<wbr>', (all, sum) => '$all<wbr>${sum.text!}')}</p>');
+            final nextFitParagraph = dom.Element.html(
+                '<p>${currentParagraph.element.nodes.sublist(cutIndex, currentParagraph.element.nodes.isNotEmpty ? currentParagraph.element.nodes.length : 0).fold<String>('<wbr>', (all, sum) => '$all<wbr>${sum.text!}')}</p>');
+            // debugger();
+
+            // printWrapped("origin.text");
+            // printWrapped(currentParagraph.element.text);
+            // printWrapped("newFitParagraph.text");
+            // printWrapped(newFitParagraph.text);
+            // printWrapped("nextFitParagraph.text");
+            // printWrapped(nextFitParagraph.text);
+
+            await elementPagingHandler(
+                currentParagraph:
+                    Paragraph(newFitParagraph, paragraph.chapterIndex));
+            await elementPagingHandler(
+                currentParagraph:
+                    Paragraph(nextFitParagraph, paragraph.chapterIndex));
+          } else {
+            elements.add(imageResizedElement?.outerHtml ??
+                currentParagraph.element.outerHtml
+                    .replaceFirst('<p>', '<p>$indentHtmlString'));
+            currentPageHeight += paintHeight!;
+            currentChapter = currentParagraph.chapterIndex;
+            imageResizedElement = null;
+          }
+          // elements.add(currentParagraph.element.outerHtml
+          //     .replaceFirst('<p>', '<p>$indentHtmlString'));
+          // currentPageHeight += paintHeight!;
+          // currentChapter = currentParagraph.chapterIndex;
         }
 
-        if ((currentPageHeight + paintHeight! > maxScreenHeight) ||
-            isNewChapter) {
-          pages.add(currentHorizontalParagraph.copyWith(
-              endingParagraphNumber: paragraphCount,
-              elements: dom.Element.html(
-                  '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
-          elements.clear();
-          currentHorizontalParagraph =
-              HorizontalParagraph(leadingParagraphNumber: paragraphCount + 1);
-          currentPageHeight = 0;
-          if (isNewChapter) {
-            _chapterPageList.add(pages.length);
-          }
-        }
-
-        elements.add(paragraph.element.outerHtml
-            .replaceFirst('<p>', '<p>$indentHtmlString'));
-        // debugger();
-        currentPageHeight += paintHeight;
-        currentChapter = paragraph.chapterIndex;
-
-        if (paragraph == paragraphs.last) {
-          pages.add(currentHorizontalParagraph.copyWith(
-              endingParagraphNumber: paragraphCount,
-              elements: dom.Element.html(
-                  '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
-          elements.clear();
-          currentHorizontalParagraph =
-              HorizontalParagraph(leadingParagraphNumber: paragraphCount + 1);
-          currentPageHeight = 0;
-        }
+        await elementPagingHandler(
+          currentParagraph: paragraph,
+        );
+        paragraphCount++;
       }
-      paragraphCount++;
     }
+    if (elements.isNotEmpty) {
+      pages.add(currentHorizontalParagraph.copyWith(
+          endingParagraphNumber: paragraphCount,
+          elements: dom.Element.html(
+              '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
+      elements.clear();
+      currentHorizontalParagraph =
+          HorizontalParagraph(leadingParagraphNumber: paragraphCount + 1);
+      currentPageHeight = 0;
+    }
+
+    // dev.inspect(pages);
+
     return pages;
   }
 
@@ -786,30 +866,31 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               future: pages,
               builder: (context, snap) {
                 if (snap.data != null) {
-                  if (widget.initReadingProgress?.readingParagraphProgress !=
-                      null) {
-                    final readingProgress = readingParagraphProgress ??
-                        widget.initReadingProgress!.readingParagraphProgress!;
-                    final initialPage = horizontalParagraphs?.indexWhere(
-                        (element) =>
-                            readingProgress >=
-                                element.leadingParagraphNumber! &&
-                            readingProgress <= element.endingParagraphNumber!);
-                    return PageViewReadingBuilder(
-                        initialPage: initialPage!,
-                        pageViewListener: _pageViewChangeListener,
-                        onMount: (PageController pageController) {
-                          _pageController = pageController;
-                        },
-                        builder: (BuildContext context,
-                            PageController pageController) {
-                          return PageView(
-                            controller: _pageController,
-                            children: snap.data!
-                                .map(
-                                  (element) => Padding(
-                                    padding: padding,
-                                    child: Center(
+                  final readingProgress = readingParagraphProgress ??
+                      widget.initReadingProgress!.readingParagraphProgress ??
+                      0;
+                  final initialPage = horizontalParagraphs?.indexWhere(
+                      (element) =>
+                          readingProgress >= element.leadingParagraphNumber! &&
+                          readingProgress <= element.endingParagraphNumber!);
+                  return PageViewReadingBuilder(
+                      initialPage: initialPage!,
+                      pageViewListener: _pageViewChangeListener,
+                      onMount: (PageController pageController) {
+                        _pageController = pageController;
+                      },
+                      builder: (BuildContext context,
+                          PageController pageController) {
+                        return PageView(
+                          controller: _pageController,
+                          children: snap.data!
+                              .map(
+                                (element) => Padding(
+                                  padding: padding,
+                                  child: Center(
+                                    child: InteractiveViewer(
+                                      minScale: 1,
+                                      maxScale: 5,
                                       child: Html(
                                         data: element.elements?.outerHtml,
                                         // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
@@ -841,15 +922,17 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                             final url = context.tree.element!
                                                 .attributes['src']!
                                                 .replaceAll('../', '');
-                                            return Image(
-                                              image: MemoryImage(
-                                                Uint8List.fromList(
-                                                  widget
-                                                      .controller
-                                                      ._document!
-                                                      .Content!
-                                                      .Images![url]!
-                                                      .Content!,
+                                            return Center(
+                                              child: Image(
+                                                image: MemoryImage(
+                                                  Uint8List.fromList(
+                                                    widget
+                                                        .controller
+                                                        ._document!
+                                                        .Content!
+                                                        .Images![url]!
+                                                        .Content!,
+                                                  ),
                                                 ),
                                               ),
                                             );
@@ -858,11 +941,11 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                       ),
                                     ),
                                   ),
-                                )
-                                .toList(),
-                          );
-                        });
-                  }
+                                ),
+                              )
+                              .toList(),
+                        );
+                      });
                 }
 
                 return const Text("Loading...");

@@ -44,7 +44,7 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
 
       if (isDownloaded) {
         EpubBookType currentEpub = ePubsFromLocalStorage
-            .singleWhere((element) => element.id == ePubs[i].id);
+            .firstWhere((element) => element.id == ePubs[i].id);
         Uint8List? uInt8list = currentEpub.file;
         File file = File("${tempDir.path}/${title}_${ePubs[i].id}.epub");
         var raf = file.openSync(mode: FileMode.write);

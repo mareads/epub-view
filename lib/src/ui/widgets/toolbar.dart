@@ -46,7 +46,9 @@ class EpubToolbar extends StatelessWidget {
                         ? "assets/icons/navigation/back_grey_icon@3x.png"
                         : "assets/icons/navigation/back_icon.svg",
                     decoration: BoxDecoration(
-                      color: state.themeMode.isDarkenedMode ? const Color(0xFF3b3b3b) : null,
+                      color: state.themeMode.isDarkenedMode
+                          ? const Color(0xFF3b3b3b)
+                          : null,
                       border: state.themeMode.isDarkenedMode
                           ? Border.all(color: Colors.transparent)
                           : null,
@@ -93,18 +95,20 @@ class EpubToolbar extends StatelessWidget {
                       ),
                     );
                   }),
-                  // AppNavigatorButton.asset(
-                  //   icon: state.themeMode.isDarkenedMode
-                  //       ? "assets/icons/navigation/next_grey_icon@3x.png"
-                  //       : "assets/icons/navigation/next_icon.svg",
-                  //   decoration: BoxDecoration(
-                  //     color: state.themeMode.isDarkenedMode ? const Color(0xFF3b3b3b) : null,
-                  //     border: state.themeMode.isDarkenedMode
-                  //         ? Border.all(color: Colors.transparent)
-                  //         : null,
-                  //   ),
-                  //   onTap: onNext,
-                  // ),
+                  AppNavigatorButton.asset(
+                    icon: state.themeMode.isDarkenedMode
+                        ? "assets/icons/navigation/next_grey_icon@3x.png"
+                        : "assets/icons/navigation/next_icon.svg",
+                    decoration: BoxDecoration(
+                      color: state.themeMode.isDarkenedMode
+                          ? const Color(0xFF3b3b3b)
+                          : null,
+                      border: state.themeMode.isDarkenedMode
+                          ? Border.all(color: Colors.transparent)
+                          : null,
+                    ),
+                    onTap: onNext,
+                  ),
                 ],
               ),
             ),
