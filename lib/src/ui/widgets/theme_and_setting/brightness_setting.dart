@@ -30,6 +30,7 @@ class BrightnessSettingWidget extends StatelessWidget {
               width: 30,
               height: 30,
               color: themeMode.data.textColor,
+              package: "epub_view",
             ),
             const SizedBox(width: 15),
             // SvgPicture.asset(

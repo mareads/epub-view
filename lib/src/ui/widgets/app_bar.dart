@@ -78,6 +78,7 @@ class EpubAppBar extends StatelessWidget {
                                   color: state.isShowChaptersSection
                                       ? Theme.of(context).colorScheme.primary
                                       : state.themeMode.data.textColor,
+                                  package: "epub_view",
                                 ),
                                 const SizedBox(width: 5),
                                 Text(
@@ -127,6 +128,7 @@ class EpubAppBar extends StatelessWidget {
                               color: state.isShowSettingSection
                                   ? Theme.of(context).colorScheme.primary
                                   : state.themeMode.data.textColor,
+                              package: "epub_view",
                             ),
                           ),
                         ),

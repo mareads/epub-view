@@ -40,7 +40,10 @@ class AppThemeModeWidget extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       padding: const EdgeInsets.all(4),
-                      child: Image.asset("assets/images/light_mode@3x.png"),
+                      child: Image.asset(
+                        "assets/images/light_mode@3x.png",
+                        package: "epub_view",
+                      ),
                     ),
                   ),
                 ),
@@ -66,6 +69,7 @@ class AppThemeModeWidget extends StatelessWidget {
                       child: Image.asset(
                         "assets/images/sepia_mode@3x.png",
                         color: const Color(0xFF0c1135),
+                        package: "epub_view",
                       ),
                     ),
                   ),
@@ -92,6 +96,7 @@ class AppThemeModeWidget extends StatelessWidget {
                       padding: const EdgeInsets.all(4),
                       child: Image.asset(
                         "assets/images/dark_while_mode@3x.png",
+                        package: "epub_view",
                       ),
                     ),
                   ),
@@ -118,6 +123,7 @@ class AppThemeModeWidget extends StatelessWidget {
                       child: Image.asset(
                         "assets/images/dark_grey_mode@3x.png",
                         color: state.themeMode.isDarkenedMode ? const Color(0xFF3f54d9) : null,
+                        package: "epub_view",
                       ),
                     ),
                   ),

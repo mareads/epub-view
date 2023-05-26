@@ -62,6 +62,7 @@ class FontsSizeWidget extends StatelessWidget {
                             child: SvgPicture.asset(
                               "assets/icons/font_sizes/font_size_${index + 1}.svg",
                               color: iconColor,
+                              package: "epub_view",
                             ),
                           ),
                         ),
