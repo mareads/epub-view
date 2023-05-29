@@ -79,12 +79,14 @@ class AppNavigatorButton extends StatelessWidget {
                     color: iconColor,
                     width: iconSize?.width,
                     height: iconSize?.height,
+                    package: "epub_view",
                   )
                 : Image.asset(
                     icon,
                     color: iconColor,
                     width: iconSize?.width,
                     height: iconSize?.height,
+                    package: "epub_view",
                   )),
       ),
     );

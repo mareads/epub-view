@@ -56,6 +56,7 @@ class LineHeightWidget extends StatelessWidget {
                       child: SvgPicture.asset(
                         "assets/icons/line_spaces/line_space_${item.key + 1}.svg",
                         color: iconColor,
+                        package: "epub_view",
                       ),
                     ),
                   ),
