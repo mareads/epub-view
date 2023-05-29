@@ -286,8 +286,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         _itemPositionListener!.itemPositions.value.isEmpty) {
       return;
     }
-    print('_itemPositionListener!.itemPositions.value.length');
-    print(_itemPositionListener!.itemPositions.value.length);
     final position = _itemPositionListener!.itemPositions.value.first;
     final itemTrailingEdges = _itemPositionListener!.itemPositions.value
         .map((e) => e.itemTrailingEdge);
@@ -409,8 +407,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             );
             final Size imageSize = await completer.future;
             if (imageSize.width > screenWidth - paddingWidth) {
-              print("imageSize.width > screenWidth");
-              print(imageSize.height);
               final diffRatio =
                   (imageSize.width - (screenWidth - paddingWidth)) /
                       imageSize.width;
@@ -776,7 +772,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             color: state.themeMode.data.textColor,
           ),
         ));
-        inspect(paragraphs[index].element.outerHtml);
         return Column(
           children: <Widget>[
             if (chapterIndex >= 0 && paragraphIndex == 0)
