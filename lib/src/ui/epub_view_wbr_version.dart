@@ -481,19 +481,14 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             final newFitHeightRatio =
                 (1 - (overflowHeight / paintHeight!)) * 0.7;
             final cutIndex =
-                (currentParagraph.element.text.length * newFitHeightRatio)
+                (currentParagraph.element.nodes.length * newFitHeightRatio)
                     .floor();
 
             final newFitParagraph = dom.Element.html(
-                '<p>${currentParagraph.element.text.substring(0, cutIndex)}</p>');
+                '<p>${currentParagraph.element.nodes.sublist(0, cutIndex).fold<String>('<wbr>', (all, sum) => '$all<wbr>${sum.text!}')}</p>');
             final nextFitParagraph = dom.Element.html(
-                '<p>${currentParagraph.element.text.substring(cutIndex, currentParagraph.element.text.isNotEmpty ? currentParagraph.element.text.length : 0)}</p>');
+                '<p>${currentParagraph.element.nodes.sublist(cutIndex, currentParagraph.element.nodes.isNotEmpty ? currentParagraph.element.nodes.length : 0).fold<String>('<wbr>', (all, sum) => '$all<wbr>${sum.text!}')}</p>');
             // debugger();
-
-            print("newFitParagraph");
-            print(newFitParagraph.text);
-            print("nextFitParagraph");
-            print(nextFitParagraph.text);
 
             if (newFitParagraph.text.isEmpty) {
               elements.add(imageResizedElement?.outerHtml ??
@@ -804,31 +799,31 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                 )),
               },
               customRenders: {
-                // tagMatcher('p'):
-                //     CustomRender.widget(widget: (context, buildChildren) {
-                //   return Wrap(
-                //     children: context.tree.children.map((e) {
-                //       if (e is TextContentElement) {
-                //         return Text(
-                //           e.text ?? "",
-                //           style: TextStyle(
-                //             height: state.lineHeight.value,
-                //             fontWeight: FontWeight.w300,
-                //             fontFamily: state.fontFamily.family,
-                //             fontSize: state.fontFamily.isJsJindara
-                //                 ? state.fontSize.dataJs
-                //                 : state.fontSize.data,
-                //             color: state.themeMode.data.textColor,
-                //           ),
-                //         );
-                //       } else {
-                //         return const SizedBox(
-                //           width: 0,
-                //         );
-                //       }
-                //     }).toList(),
-                //   );
-                // }),
+                tagMatcher('p'):
+                    CustomRender.widget(widget: (context, buildChildren) {
+                  return Wrap(
+                    children: context.tree.children.map((e) {
+                      if (e is TextContentElement) {
+                        return Text(
+                          e.text ?? "",
+                          style: TextStyle(
+                            height: state.lineHeight.value,
+                            fontWeight: FontWeight.w300,
+                            fontFamily: state.fontFamily.family,
+                            fontSize: state.fontFamily.isJsJindara
+                                ? state.fontSize.dataJs
+                                : state.fontSize.data,
+                            color: state.themeMode.data.textColor,
+                          ),
+                        );
+                      } else {
+                        return const SizedBox(
+                          width: 0,
+                        );
+                      }
+                    }).toList(),
+                  );
+                }),
                 tagMatcher('img'):
                     CustomRender.widget(widget: (context, buildChildren) {
                   final url = context.tree.element!.attributes['src']!
@@ -950,8 +945,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                           controller: _pageController,
                           children: snap.data!.map(
                             (element) {
-                              print("element.elements?.outerHtml");
-                              print(element.elements?.outerHtml);
                               return Padding(
                                 padding: padding,
                                 child: Center(
@@ -983,36 +976,36 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                       },
 
                                       customRenders: {
-                                        // tagMatcher('p'): CustomRender.widget(
-                                        //     widget: (context, buildChildren) {
-                                        //   return Wrap(
-                                        //     children:
-                                        //         context.tree.children.map((e) {
-                                        //       if (e is TextContentElement) {
-                                        //         return Text(
-                                        //           e.text ?? "",
-                                        //           style: TextStyle(
-                                        //             height:
-                                        //                 state.lineHeight.value,
-                                        //             fontWeight: FontWeight.w300,
-                                        //             fontFamily:
-                                        //                 state.fontFamily.family,
-                                        //             fontSize: state.fontFamily
-                                        //                     .isJsJindara
-                                        //                 ? state.fontSize.dataJs
-                                        //                 : state.fontSize.data,
-                                        //             color: state.themeMode.data
-                                        //                 .textColor,
-                                        //           ),
-                                        //         );
-                                        //       } else {
-                                        //         return const SizedBox(
-                                        //           width: 0,
-                                        //         );
-                                        //       }
-                                        //     }).toList(),
-                                        //   );
-                                        // }),
+                                        tagMatcher('p'): CustomRender.widget(
+                                            widget: (context, buildChildren) {
+                                          return Wrap(
+                                            children:
+                                                context.tree.children.map((e) {
+                                              if (e is TextContentElement) {
+                                                return Text(
+                                                  e.text ?? "",
+                                                  style: TextStyle(
+                                                    height:
+                                                        state.lineHeight.value,
+                                                    fontWeight: FontWeight.w300,
+                                                    fontFamily:
+                                                        state.fontFamily.family,
+                                                    fontSize: state.fontFamily
+                                                            .isJsJindara
+                                                        ? state.fontSize.dataJs
+                                                        : state.fontSize.data,
+                                                    color: state.themeMode.data
+                                                        .textColor,
+                                                  ),
+                                                );
+                                              } else {
+                                                return const SizedBox(
+                                                  width: 0,
+                                                );
+                                              }
+                                            }).toList(),
+                                          );
+                                        }),
                                         tagMatcher('img'): CustomRender.widget(
                                             widget: (context, buildChildren) {
                                           final url = context
