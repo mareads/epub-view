@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' show parse;
 
@@ -138,11 +136,9 @@ class EpubCfiReader {
     }
 
     //TODO: remove these lines after back-end implemented
-    final htmlRaw = chapter.HtmlContent!.replaceAllMapped(
+    final html = chapter.HtmlContent!.replaceAllMapped(
         RegExp(r'<\s*([^\s>]+)([^>]*)\/\s*>'),
         (match) => '<${match.group(1)}${match.group(2)}></${match.group(1)}>');
-
-    final html = htmlRaw.replaceAll("&#x200B;", '<wbr>');
 
     final regExp = RegExp(
       r'<body.*?>.+?</body>',

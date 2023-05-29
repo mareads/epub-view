@@ -18,8 +18,8 @@ class EpubToolbar extends StatelessWidget {
   }) : super(key: key);
 
   final Animation<double> animation;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
+  final Function(BuildContext ctx) onPrevious;
+  final Function(BuildContext ctx) onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,9 @@ class EpubToolbar extends StatelessWidget {
                           ? Border.all(color: Colors.transparent)
                           : null,
                     ),
-                    onTap: onPrevious,
+                    onTap: () {
+                      onPrevious(context);
+                    },
                   ),
                   BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
                       builder: (context, state) {
@@ -107,7 +109,9 @@ class EpubToolbar extends StatelessWidget {
                           ? Border.all(color: Colors.transparent)
                           : null,
                     ),
-                    onTap: onNext,
+                    onTap: () {
+                      onNext(context);
+                    },
                   ),
                 ],
               ),

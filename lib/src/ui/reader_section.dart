@@ -37,25 +37,23 @@ class _ReaderSectionState extends State<ReaderSection> {
     super.initState();
 
     widget.controller.currentValueListenable.addListener(() {
-      if (context.read<ReaderSettingCubit>().state.readerMode.isVertical) {
-        final currentParagraph = widget.controller.currentValueListenable.value!
-                .currentAllParagraphIndex +
-            1;
+      final currentParagraph =
+          context.read<ReaderSettingCubit>().state.readerMode.isVertical
+              ? widget.controller.currentValueListenable.value!
+                      .currentAllParagraphIndex +
+                  1
+              : widget.controller.currentValueListenable.value!.paragraphNumber;
 
-        context
-            .read<ReaderSettingCubit>()
-            .onScrollUpdate(UserScrollNotification(
-                metrics: FixedScrollMetrics(
-                  maxScrollExtent:
-                      widget.paragraphsProgressList.length.toDouble(),
-                  pixels: currentParagraph.toDouble(),
-                  minScrollExtent: 1,
-                  viewportDimension: 1,
-                  axisDirection: AxisDirection.right,
-                ),
-                context: context,
-                direction: ScrollDirection.idle));
-      }
+      context.read<ReaderSettingCubit>().onScrollUpdate(UserScrollNotification(
+          metrics: FixedScrollMetrics(
+            maxScrollExtent: widget.paragraphsProgressList.length.toDouble(),
+            pixels: currentParagraph.toDouble(),
+            minScrollExtent: 1,
+            viewportDimension: 1,
+            axisDirection: AxisDirection.right,
+          ),
+          context: context,
+          direction: ScrollDirection.idle));
     });
   }
 
@@ -73,25 +71,16 @@ class _ReaderSectionState extends State<ReaderSection> {
               children: [
                 Positioned.fill(
                   top: 0,
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (scroll) {
-                      if (state.readerMode.isHorizontal) {
-                        ctx.read<ReaderSettingCubit>().onScrollUpdate(scroll);
-                      }
-
-                      return false;
-                    },
-                    child: ColoredBox(
-                      color: state.themeMode.data.backgroundColor,
-                      child: widget.builders.builder(
-                        context,
-                        widget.builders,
-                        widget.controller.loadingState.value,
-                        state.readerMode.isHorizontal
-                            ? widget.buildLoadedHorizontal
-                            : widget.buildLoaded,
-                        widget.loadingError,
-                      ),
+                  child: ColoredBox(
+                    color: state.themeMode.data.backgroundColor,
+                    child: widget.builders.builder(
+                      context,
+                      widget.builders,
+                      widget.controller.loadingState.value,
+                      state.readerMode.isHorizontal
+                          ? widget.buildLoadedHorizontal
+                          : widget.buildLoaded,
+                      widget.loadingError,
                     ),
                   ),
                 ),

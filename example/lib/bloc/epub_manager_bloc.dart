@@ -180,53 +180,53 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
     int difference =
         DateTime.parse(epubType.updateTime!).difference(DateTime.now()).inDays;
 
-    if (difference.isNegative) {
-      String path =
-          "https://mareads-staging-assets.s3.ap-southeast-1.amazonaws.com/ebook/${int.parse(title)}.epub";
-      emit(state.copyWith(status: EpubManagerStatus.updating));
-
-      var tempDir = await getTemporaryDirectory();
-      String savePath = "${tempDir.path}/${title}_${event.ePubId}.epub";
-
-      final index =
-          state.ePubs.indexWhere((element) => element.id == event.ePubId);
-      final currentEpub = state.ePubs[index].copyWith();
-      Response response = await Dio().get(
-        path,
-        onReceiveProgress: (received, total) {
-          if (received / total * 100 <= 90) {
-            emit(state.copyWith(updatePercent: received / total));
-          }
-        },
-        options: Options(
-          responseType: ResponseType.bytes,
-          followRedirects: false,
-          validateStatus: (status) {
-            return status! < 500;
-          },
-        ),
-      );
-
-      if (response.data != null) {
-        File file = File(savePath);
-        var raf = file.openSync(mode: FileMode.write);
-        raf.writeFromSync(response.data);
-        await raf.close();
-        emit(state.copyWith(updatePercent: 1)); // 100%
-        await EpubBookBox().deleteBook(epubId: event.ePubId, title: title);
-        File newFile = File(raf.path);
-        final updateEpub = currentEpub.copyWith(file: newFile);
-        await EpubBookBox()
-            .saveEpubBook(ePub: updateEpub.copyWith(title: title));
-        emit(state.copyWith(
-          updatePercent: 0, // Download is done.
-          ePubs: state.ePubs..[index] = updateEpub.copyWith(isDownloaded: true),
-        ));
-      }
-
-      emit(state.copyWith(status: EpubManagerStatus.updated));
-      await Future.delayed(const Duration(milliseconds: 500));
-    }
+    // if (difference.isNegative) {
+    //   String path =
+    //       "https://mareads-staging-assets.s3.ap-southeast-1.amazonaws.com/ebook/${int.parse(title)}.epub";
+    //   emit(state.copyWith(status: EpubManagerStatus.updating));
+    //
+    //   var tempDir = await getTemporaryDirectory();
+    //   String savePath = "${tempDir.path}/${title}_${event.ePubId}.epub";
+    //
+    //   final index =
+    //       state.ePubs.indexWhere((element) => element.id == event.ePubId);
+    //   final currentEpub = state.ePubs[index].copyWith();
+    //   Response response = await Dio().get(
+    //     path,
+    //     onReceiveProgress: (received, total) {
+    //       if (received / total * 100 <= 90) {
+    //         emit(state.copyWith(updatePercent: received / total));
+    //       }
+    //     },
+    //     options: Options(
+    //       responseType: ResponseType.bytes,
+    //       followRedirects: false,
+    //       validateStatus: (status) {
+    //         return status! < 500;
+    //       },
+    //     ),
+    //   );
+    //
+    //   if (response.data != null) {
+    //     File file = File(savePath);
+    //     var raf = file.openSync(mode: FileMode.write);
+    //     raf.writeFromSync(response.data);
+    //     await raf.close();
+    //     emit(state.copyWith(updatePercent: 1)); // 100%
+    //     await EpubBookBox().deleteBook(epubId: event.ePubId, title: title);
+    //     File newFile = File(raf.path);
+    //     final updateEpub = currentEpub.copyWith(file: newFile);
+    //     await EpubBookBox()
+    //         .saveEpubBook(ePub: updateEpub.copyWith(title: title));
+    //     emit(state.copyWith(
+    //       updatePercent: 0, // Download is done.
+    //       ePubs: state.ePubs..[index] = updateEpub.copyWith(isDownloaded: true),
+    //     ));
+    //   }
+    //
+    //   emit(state.copyWith(status: EpubManagerStatus.updated));
+    //   await Future.delayed(const Duration(milliseconds: 500));
+    // }
 
     if (event.onSuccess != null) {
       emit(state.copyWith(status: EpubManagerStatus.success));
