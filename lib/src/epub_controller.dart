@@ -51,30 +51,30 @@ class EpubController {
         curve: curve,
       );
 
-  void gotoEpubCfi(
-    String epubCfi, {
-    double alignment = 0,
-    Duration duration = const Duration(milliseconds: 250),
-    Curve curve = Curves.linear,
-  }) {
-    _epubViewState?._gotoEpubCfi(
-      epubCfi,
-      alignment: alignment,
-      duration: duration,
-      curve: curve,
-    );
-  }
+  // void gotoEpubCfi(
+  //   String epubCfi, {
+  //   double alignment = 0,
+  //   Duration duration = const Duration(milliseconds: 250),
+  //   Curve curve = Curves.linear,
+  // }) {
+  //   _epubViewState?._gotoEpubCfi(
+  //     epubCfi,
+  //     alignment: alignment,
+  //     duration: duration,
+  //     curve: curve,
+  //   );
+  // }
 
-  String? generateEpubCfi() => _epubViewState?._epubCfiReader?.generateCfi(
-        book: _document,
-        chapter: _epubViewState?._currentValue?.chapter,
-        paragraphIndex: _epubViewState?._getAbsParagraphIndexBy(
-          positionIndex: _epubViewState?._currentValue?.position.index ?? 0,
-          trailingEdge:
-              _epubViewState?._currentValue?.position.itemTrailingEdge,
-          leadingEdge: _epubViewState?._currentValue?.position.itemLeadingEdge,
-        ),
-      );
+  // String? generateEpubCfi() => _epubViewState?._epubCfiReader?.generateCfi(
+  //       book: _document,
+  //       chapter: _epubViewState?._currentValue?.chapter,
+  //       paragraphIndex: _epubViewState?._getAbsParagraphIndexBy(
+  //         positionIndex: _epubViewState?._currentValue?.position.index ?? 0,
+  //         trailingEdge:
+  //             _epubViewState?._currentValue?.position.itemTrailingEdge,
+  //         leadingEdge: _epubViewState?._currentValue?.position.itemLeadingEdge,
+  //       ),
+  //     );
 
   List<EpubViewChapter> tableOfContents() {
     if (_cacheTableOfContents != null) {

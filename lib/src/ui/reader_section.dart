@@ -1,3 +1,4 @@
+import 'package:epub_view/src/data/models/chapter_paragraphs.dart';
 import 'package:epub_view/src/data/setting/src/epub_theme_mode.dart';
 import 'package:epub_view/src/data/setting/src/reader_mode.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,7 @@ import '../providers/cubits/reader_setting_cubit.dart';
 
 class ReaderSection extends StatefulWidget {
   final EpubViewBuilders builders;
-  final List<ParagraphProgress> paragraphsProgressList;
+  final ChapterParagraphs? currentChapter;
   final EpubController controller;
   final Exception? loadingError;
   final Widget Function(BuildContext context) buildLoaded;
@@ -22,7 +23,7 @@ class ReaderSection extends StatefulWidget {
       required this.buildLoadedHorizontal,
       required this.loadingError,
       required this.controller,
-      required this.paragraphsProgressList})
+      this.currentChapter})
       : super(key: key);
 
   @override
@@ -46,7 +47,8 @@ class _ReaderSectionState extends State<ReaderSection> {
 
       context.read<ReaderSettingCubit>().onScrollUpdate(UserScrollNotification(
           metrics: FixedScrollMetrics(
-            maxScrollExtent: widget.paragraphsProgressList.length.toDouble(),
+            maxScrollExtent:
+                widget.currentChapter?.paragraphs.length.toDouble(),
             pixels: currentParagraph.toDouble(),
             minScrollExtent: 1,
             viewportDimension: 1,
@@ -71,18 +73,20 @@ class _ReaderSectionState extends State<ReaderSection> {
               children: [
                 Positioned.fill(
                   top: 0,
-                  child: ColoredBox(
-                    color: state.themeMode.data.backgroundColor,
-                    child: widget.builders.builder(
-                      context,
-                      widget.builders,
-                      widget.controller.loadingState.value,
-                      state.readerMode.isHorizontal
-                          ? widget.buildLoadedHorizontal
-                          : widget.buildLoaded,
-                      widget.loadingError,
-                    ),
-                  ),
+                  child: widget.currentChapter != null
+                      ? ColoredBox(
+                          color: state.themeMode.data.backgroundColor,
+                          child: widget.builders.builder(
+                            context,
+                            widget.builders,
+                            widget.controller.loadingState.value,
+                            state.readerMode.isHorizontal
+                                ? widget.buildLoadedHorizontal
+                                : widget.buildLoaded,
+                            widget.loadingError,
+                          ),
+                        )
+                      : const Text("Loading..."),
                 ),
                 // if (isShowToc || isShowThemeSetting)
                 //   InkWell(

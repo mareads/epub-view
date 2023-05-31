@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:epub_view/epub_view.dart';
@@ -163,6 +164,7 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
       ePub: widget.epubBook,
       readingProgress: ReadingProgress(
         readingParagraphProgress: readingProgress.readingParagraphProgress,
+        readingChapterProgress: readingProgress.readingChapterProgress,
       ),
       // readingSettings: ReadingSettingsType(
       //     readerMode:
@@ -182,6 +184,8 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
 
   @override
   Widget build(BuildContext context) {
+    inspect("widget.epubBook.readingProgress,");
+    inspect(widget.epubBook.readingProgress);
     return Scaffold(
       body: EpubView(
         initReadingProgress: widget.epubBook.readingProgress,
@@ -203,21 +207,21 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
     );
   }
 
-  void _showCurrentEpubCfi(context) {
-    final cfi = _epubReaderController.generateEpubCfi();
-
-    if (cfi != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(cfi),
-          action: SnackBarAction(
-            label: 'GO',
-            onPressed: () {
-              _epubReaderController.gotoEpubCfi(cfi);
-            },
-          ),
-        ),
-      );
-    }
-  }
+  // void _showCurrentEpubCfi(context) {
+  //   final cfi = _epubReaderController.generateEpubCfi();
+  //
+  //   if (cfi != null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(cfi),
+  //         action: SnackBarAction(
+  //           label: 'GO',
+  //           onPressed: () {
+  //             _epubReaderController.gotoEpubCfi(cfi);
+  //           },
+  //         ),
+  //       ),
+  //     );
+  //   }
+  // }
 }

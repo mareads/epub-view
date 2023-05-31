@@ -69,6 +69,7 @@ class EpubManagerBloc extends Bloc<EpubManagerEvent, EpubManagerState> {
             //             EpubLineHeight.factor_1_5.type.name),
             //     themeMode: epubThemeModeFromString(currentEpub.readingSettings?.themeMode?.name ?? EpubThemeMode.light.name)),
             readingProgress: ReadingProgress(
+                readingChapterProgress: currentEpub.readingChapterProgress,
                 readingParagraphProgress:
                     currentEpub.readingParagraphProgress));
       }

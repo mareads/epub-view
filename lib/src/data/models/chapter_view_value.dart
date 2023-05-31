@@ -5,7 +5,7 @@ export 'package:epubx/epubx.dart' hide Image;
 
 class EpubChapterViewValue {
   const EpubChapterViewValue({
-    required this.chapter,
+    // required this.chapter,
     required this.chapterNumber,
     required this.onHorizontalPageChange,
     required this.paragraphNumber,
@@ -13,7 +13,7 @@ class EpubChapterViewValue {
     required this.position,
   });
 
-  final EpubChapter? chapter;
+  // final EpubChapter? chapter;
   final int chapterNumber;
   final void Function({required int chapterId}) onHorizontalPageChange;
   final int paragraphNumber;

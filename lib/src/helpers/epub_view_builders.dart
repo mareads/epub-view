@@ -22,10 +22,10 @@ typedef ChaptersBuilder = Widget Function(
   EpubViewBuilders builders,
   EpubBook document,
   List<EpubChapter> chapters,
-  List<Paragraph> paragraphs,
+  List<dom.Element> paragraphs,
   int index,
-  int chapterIndex,
-  int paragraphIndex,
+  // int chapterIndex,
+  // int paragraphIndex,
   ExternalLinkPressed onExternalLinkPressed,
 );
 

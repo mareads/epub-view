@@ -22,6 +22,9 @@ class EpubBookType extends HiveObject with EquatableMixin {
   @HiveField(4)
   final int? readingParagraphProgress;
 
+  @HiveField(5)
+  final int? readingChapterProgress;
+
   // @HiveField(5)
   // final ReadingSettingsType? readingSettings;
 
@@ -31,6 +34,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
     this.updateTime,
     this.file,
     this.readingParagraphProgress,
+    this.readingChapterProgress,
     // this.readingSettings,
   });
 
@@ -40,6 +44,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
     String? updateTime,
     Uint8List? file,
     int? readingParagraphProgress,
+    int? readingChapterProgress,
     // ReadingSettingsType? readingSettings,
   }) {
     return EpubBookType(
@@ -49,6 +54,8 @@ class EpubBookType extends HiveObject with EquatableMixin {
       file: file ?? this.file,
       readingParagraphProgress:
           readingParagraphProgress ?? this.readingParagraphProgress,
+      readingChapterProgress:
+          readingChapterProgress ?? this.readingChapterProgress,
       // readingSettings: readingSettings ?? this.readingSettings,
     );
   }
@@ -60,6 +67,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
       updateTime: json["updateTime"]?.toString(),
       file: json["file"],
       readingParagraphProgress: json["readingParagraphProgress"],
+      readingChapterProgress: json["readingChapterProgress"],
       // readingSettings: json["readingSettings"],
     );
   }
@@ -71,12 +79,15 @@ class EpubBookType extends HiveObject with EquatableMixin {
         if (file != null) 'file': file,
         if (readingParagraphProgress != null)
           'readingParagraphProgress': readingParagraphProgress,
+        if (readingChapterProgress != null)
+          'readingChapterProgress': readingChapterProgress,
         // if (readingSettings != null) 'readingSettings': readingSettings,
       };
 
   @override
   List<Object?> get props => [
         id, title, updateTime, file, readingParagraphProgress,
+        readingChapterProgress
         // readingSettings
       ];
 }

@@ -58,7 +58,10 @@ class EpubBookBox {
     EpubBookType? currentBook = await box.get(key);
     final updateBook = currentBook!.copyWith(
         // readingSettings: readingSettings,
-        readingParagraphProgress: readingProgress.readingParagraphProgress);
+        readingParagraphProgress: readingProgress.readingParagraphProgress,
+        readingChapterProgress: readingProgress.readingChapterProgress);
+    inspect("updateBook");
+    inspect(updateBook);
     await box.put(key, updateBook);
   }
 

@@ -12,10 +12,13 @@ class EpubViewContents extends StatelessWidget {
   const EpubViewContents({
     Key? key,
     required this.controller,
+    required this.onSelectChapter,
     this.scrollController,
     this.contentHeight = 38,
   }) : super(key: key);
 
+  final void Function({required int chapterIndex, required BuildContext ctx})
+      onSelectChapter;
   final EpubController controller;
   final ScrollController? scrollController;
   final double contentHeight;
@@ -57,14 +60,14 @@ class EpubViewContents extends StatelessWidget {
         scrollController ?? ScrollController(debugLabel: "EpubViewContents");
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final index = controller.tableOfContentsListenable.value.indexWhere(
-          (element) =>
-              element.title!.trim() ==
-              (controller.currentValueListenable.value?.chapter?.Title
-                      ?.replaceAll('\n', '')
-                      .trim() ??
-                  ''));
-      scroll.jumpTo(index * contentHeight);
+      // final index = controller.tableOfContentsListenable.value.indexWhere(
+      //     (element) =>
+      //         element.title!.trim() ==
+      //         (controller.currentValueListenable.value?.chapter?.Title
+      //                 ?.replaceAll('\n', '')
+      //                 .trim() ??
+      //             ''));
+      // scroll.jumpTo(index * contentHeight);
     });
 
     return ValueListenableBuilder<EpubChapterViewValue?>(
@@ -123,18 +126,20 @@ class EpubViewContents extends StatelessWidget {
                               style: contentStyle,
                             ),
                             onTap: () async {
-                              if (state.readerMode.isHorizontal) {
-                                chapterData?.onHorizontalPageChange(
-                                    chapterId: index);
-                              } else {
-                                await controller.scrollTo(
-                                    index: data[index].startIndex);
-                                double currentPositions =
-                                    (index * contentHeight) % 360;
-                                if (currentPositions >= 290) {
-                                  scroll.jumpTo(index * contentHeight);
-                                }
-                              }
+                              onSelectChapter(
+                                  chapterIndex: index, ctx: context);
+                              // if (state.readerMode.isHorizontal) {
+                              //   chapterData?.onHorizontalPageChange(
+                              //       chapterId: index);
+                              // } else {
+                              //   await controller.scrollTo(
+                              //       index: data[index].startIndex);
+                              //   double currentPositions =
+                              //       (index * contentHeight) % 360;
+                              //   if (currentPositions >= 290) {
+                              //     scroll.jumpTo(index * contentHeight);
+                              //   }
+                              // }
                             },
                           );
                         }),
