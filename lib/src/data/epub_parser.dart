@@ -107,10 +107,20 @@ ParseParagraphsResult parseParagraphs(
   return ParseParagraphsResult(paragraphs, chapterIndexes);
 }
 
+class ParseChapterParagraphsInterface {
+  final List<EpubChapter> chapters;
+  final EpubContent? content;
+
+  const ParseChapterParagraphsInterface({
+    required this.chapters,
+    required this.content,
+  });
+}
+
 List<ChapterParagraphs?> parseChapterParagraphs(
-  List<EpubChapter> chapters,
-  EpubContent? content,
-) {
+    ParseChapterParagraphsInterface parseChapterParagraphsInterface) {
+  final content = parseChapterParagraphsInterface.content;
+  final chapters = parseChapterParagraphsInterface.chapters;
   String? filename = '';
   int chapterIndex = 0;
   final paragraphs = chapters.map<ChapterParagraphs?>((chapter) {

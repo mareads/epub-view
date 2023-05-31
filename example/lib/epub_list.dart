@@ -198,9 +198,20 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
             ),
             chapterDividerBuilder: (_) => const Divider(),
             loaderBuilder: (ctx) {
-              return const CircularProgressIndicator(
-                color: Colors.blue,
-              );
+              return Center(
+                  child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: CircularProgressIndicator()),
+                  SizedBox(
+                    height: 40,
+                  ),
+                  Text("กำลังเปิด อีพับ กรุณารอซักครู่..."),
+                ],
+              ));
             }),
         controller: _epubReaderController,
       ),

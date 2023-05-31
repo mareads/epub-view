@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -9,6 +10,7 @@ import 'package:epub_view/src/models/horizontal_paragraph.dart';
 import 'package:epub_view/src/ui/reader_section.dart';
 import 'package:epub_view/src/ui/widgets/epub_contents.dart';
 import 'package:epub_view/src/ui/widgets/pageview_reading_builder.dart';
+import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:epub_view/src/data/epub_cfi_reader.dart';
@@ -102,6 +104,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   ItemPositionsListener? _itemPositionListener;
   List<EpubChapter> _chapters = [];
   int _selectedChapterIndex = 0;
+  bool _isStartOfFirstPage = true;
   List<ChapterParagraphs?> _chapterParagraphs = [];
   // int _paragraphsProgressList = [];
   // EpubCfiReader? _epubCfiReader;
@@ -204,9 +207,18 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     }
 
     _chapters = parseChapters(_controller._document!);
-    final parseChapterParagraphsResult =
-        parseChapterParagraphs(_chapters, _controller._document!.Content);
-    _chapterParagraphs = parseChapterParagraphsResult;
+    compute<ParseChapterParagraphsInterface, List<ChapterParagraphs?>>(
+            parseChapterParagraphs,
+            ParseChapterParagraphsInterface(
+                chapters: _chapters, content: _controller._document!.Content))
+        .then((List<ChapterParagraphs?> value) {
+      _chapterParagraphs = value;
+
+      _itemPositionListener!.itemPositions.addListener(_changeListener);
+      _controller.isBookLoaded.value = true;
+      setState(() {});
+    });
+
     // print("_chapterParagraphs");
     // print(_chapterParagraphs);
     // setState(() {
@@ -220,38 +232,17 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     //   paragraphs: _paragraphs,
     // );
 
-    _itemPositionListener!.itemPositions.addListener(_changeListener);
-    _controller.isBookLoaded.value = true;
-
     return true;
   }
 
-  Future<void> _onPreviousChapter({required BuildContext ctx}) async {
-    final targetChapter =
-        _controller.currentValueListenable.value!.chapterNumber - 1;
-    await _navigateToChapter(chapter: targetChapter, ctx: ctx);
+  void _onPreviousChapter({required BuildContext ctx}) {
+    final targetChapter = _selectedChapterIndex - 1;
+    _onSelectChapter(chapterIndex: targetChapter, ctx: ctx);
   }
 
-  Future<void> _onNextChapter({required BuildContext ctx}) async {
-    final targetChapter =
-        _controller.currentValueListenable.value!.chapterNumber + 1;
-    await _navigateToChapter(chapter: targetChapter, ctx: ctx);
-  }
-
-  Future<void> _navigateToChapter(
-      {required int chapter, required BuildContext ctx}) async {
-    if (chapter <= _controller.tableOfContentsListenable.value.length &&
-        chapter > 0) {
-      final readState = ctx.read<ReaderSettingCubit>().state;
-      if (readState.readerMode.isHorizontal) {
-        _controller.currentValueListenable.value
-            ?.onHorizontalPageChange(chapterId: chapter - 1);
-      } else {
-        await _controller.scrollTo(
-            index: _controller
-                .tableOfContentsListenable.value[chapter - 1].startIndex);
-      }
-    }
+  void _onNextChapter({required BuildContext ctx}) {
+    final targetChapter = _selectedChapterIndex + 1;
+    _onSelectChapter(chapterIndex: targetChapter, ctx: ctx);
   }
 
   void _pageViewChangeListener() {
@@ -493,10 +484,13 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             final cutWithSpaceIndex =
                 currentParagraph.text.substring(0, cutIndex).lastIndexOf(" ");
 
+            final actualCutIndex =
+                cutWithSpaceIndex == -1 ? cutIndex : cutWithSpaceIndex;
+
             final newFitParagraph = dom.Element.html(
-                '<p>${currentParagraph.text.substring(0, cutWithSpaceIndex)}</p>');
+                '<p>${currentParagraph.text.substring(0, actualCutIndex)}</p>');
             final nextFitParagraph = dom.Element.html(
-                '<p>${currentParagraph.text.substring(cutWithSpaceIndex + 1, currentParagraph.text.isNotEmpty ? currentParagraph.text.length : 0)}</p>');
+                '<p>${currentParagraph.text.substring(actualCutIndex + 1, currentParagraph.text.isNotEmpty ? currentParagraph.text.length : 0)}</p>');
             // debugger();
 
             // print("newFitParagraph");
@@ -520,7 +514,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             if (((currentPageHeight + paintHeight! > maxScreenHeight)) &&
                 elements.isNotEmpty) {
               pages.add(currentHorizontalParagraph.copyWith(
-                  endingParagraphNumber: paragraphCount,
+                  endingParagraphNumber: paragraphCount <
+                          currentHorizontalParagraph.leadingParagraphNumber!
+                      ? paragraphCount + 1
+                      : paragraphCount,
                   elements: dom.Element.html(
                       '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
               elements.clear();
@@ -921,13 +918,25 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             final bottomTapableHeight = tapableHeight - box.size.height * 0.2;
             if (y < topTapableHeight && y > bottomTapableHeight) {
               if (x < box.size.width / 2) {
-                _pageController!.previousPage(
-                    duration: const Duration(milliseconds: 100),
-                    curve: Curves.linear);
+                if (_pageController?.page == 0) {
+                  _onSelectChapter(
+                      chapterIndex: _selectedChapterIndex - 1,
+                      ctx: ctx,
+                      isLastPage: true);
+                } else {
+                  _pageController!.previousPage(
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.linear);
+                }
               } else {
-                _pageController!.nextPage(
-                    duration: const Duration(milliseconds: 100),
-                    curve: Curves.linear);
+                if (_pageController?.page == horizontalParagraphs!.length - 1) {
+                  _onSelectChapter(
+                      chapterIndex: _selectedChapterIndex + 1, ctx: ctx);
+                } else {
+                  _pageController!.nextPage(
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.linear);
+                }
               }
             } else {
               ctx.read<ReaderSettingCubit>().onToggleAppBar();
@@ -940,10 +949,17 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                   final readingProgress = readingParagraphProgress ??
                       widget.initReadingProgress!.readingParagraphProgress ??
                       0;
+
                   final initialPage = horizontalParagraphs?.indexWhere(
                       (element) =>
                           readingProgress >= element.leadingParagraphNumber! &&
                           readingProgress <= element.endingParagraphNumber!);
+
+                  if (!_isStartOfFirstPage) {
+                    _pageController
+                        ?.jumpToPage(horizontalParagraphs!.length - 1);
+                  }
+
                   return PageViewReadingBuilder(
                       initialPage: initialPage!,
                       pageViewListener: _pageViewChangeListener,
@@ -1063,14 +1079,29 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     // return Container();
   }
 
-  void _onSelectChapter({required chapterIndex, required BuildContext ctx}) {
+  void _onSelectChapter(
+      {required chapterIndex, required BuildContext ctx, bool? isLastPage}) {
+    if (chapterIndex < 0 || chapterIndex > _chapterParagraphs.length - 1) {
+      return;
+    }
     setState(() {
+      if (isLastPage != null && isLastPage) {
+        _isStartOfFirstPage = false;
+      } else {
+        _isStartOfFirstPage = true;
+      }
       _selectedChapterIndex = chapterIndex;
     });
     final readState = ctx.read<ReaderSettingCubit>().state;
     if (readState.readerMode.isHorizontal) {
+      if (isLastPage != true) {
+        _pageController?.jumpTo(0);
+      }
       _pageViewChangeListener();
     } else {
+      if (isLastPage != true) {
+        _itemScrollController?.jumpTo(index: 0);
+      }
       _changeListener();
     }
   }
@@ -1118,103 +1149,110 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (_) => ReaderSettingCubit()),
-      ],
-      child: SafeArea(
-        child: BlocListener<ReaderSettingCubit, ReaderSettingState>(
-          listener: (ctx, state) {
-            readingSettings = ReadingSettings(
-                readerMode: state.readerMode,
-                fontSize: state.fontSize,
-                fontFamily: state.fontFamily,
-                lineHeight: state.lineHeight,
-                themeMode: state.themeMode);
-          },
-          child: Stack(
-            children: [
-              /// App Bar Navigator controller
-              MultiBlocListener(
-                listeners: [
-                  BlocListener<ReaderSettingCubit, ReaderSettingState>(
-                      listenWhen: (prev, cur) =>
-                          prev.isShowToc != cur.isShowToc,
-                      listener: (ctx, state) {
-                        if (state.isShowToc) {
-                          _appBarAnimationController.reverse();
-                        } else {
-                          _appBarAnimationController.forward();
-                        }
-                      }),
-                  BlocListener<ReaderSettingCubit, ReaderSettingState>(
-                      listenWhen: (prev, cur) =>
-                          prev.isShowSettingSection != cur.isShowSettingSection,
-                      listener: (ctx, state) {
-                        if (state.isShowSettingSection) {
-                          _themeSettingAnimationController.forward();
-                        } else {
-                          _themeSettingAnimationController.reverse();
-                        }
-                      }),
-                ],
-                child: const SizedBox(),
-              ),
-              ReaderSection(
-                currentChapter: _chapterParagraphs.isNotEmpty
-                    ? _chapterParagraphs[_selectedChapterIndex]
-                    : null,
-                builders: widget.builders,
-                controller: _controller,
-                buildLoaded: _buildLoaded,
-                buildLoadedHorizontal: _buildLoadedHorizontal,
-                loadingError: _loadingError,
-              ),
-              EpubAppBar(
-                handleOnDisposeReader: _handleOnDisposeReader,
-                animation: _appBarAnimation,
-              ),
-
-              EpubToolbar(
-                animation: _appBarAnimation,
-                onPrevious: (context) {
-                  _onPreviousChapter(ctx: context);
+    return SafeArea(
+      child: _chapterParagraphs.isNotEmpty
+          ? MultiBlocProvider(
+              providers: [
+                BlocProvider(create: (_) => ReaderSettingCubit()),
+              ],
+              child: BlocListener<ReaderSettingCubit, ReaderSettingState>(
+                listener: (ctx, state) {
+                  readingSettings = ReadingSettings(
+                      readerMode: state.readerMode,
+                      fontSize: state.fontSize,
+                      fontFamily: state.fontFamily,
+                      lineHeight: state.lineHeight,
+                      themeMode: state.themeMode);
                 },
-                onNext: (context) {
-                  _onNextChapter(ctx: context);
-                },
+                child: Stack(
+                  children: [
+                    /// App Bar Navigator controller
+                    MultiBlocListener(
+                      listeners: [
+                        BlocListener<ReaderSettingCubit, ReaderSettingState>(
+                            listenWhen: (prev, cur) =>
+                                prev.isShowToc != cur.isShowToc,
+                            listener: (ctx, state) {
+                              if (state.isShowToc) {
+                                _appBarAnimationController.reverse();
+                              } else {
+                                _appBarAnimationController.forward();
+                              }
+                            }),
+                        BlocListener<ReaderSettingCubit, ReaderSettingState>(
+                            listenWhen: (prev, cur) =>
+                                prev.isShowSettingSection !=
+                                cur.isShowSettingSection,
+                            listener: (ctx, state) {
+                              if (state.isShowSettingSection) {
+                                _themeSettingAnimationController.forward();
+                              } else {
+                                _themeSettingAnimationController.reverse();
+                              }
+                            }),
+                      ],
+                      child: const SizedBox(),
+                    ),
+                    ReaderSection(
+                      currentChapter: _chapterParagraphs.isNotEmpty
+                          ? _chapterParagraphs[_selectedChapterIndex]
+                          : null,
+                      builders: widget.builders,
+                      controller: _controller,
+                      buildLoaded: _buildLoaded,
+                      buildLoadedHorizontal: _buildLoadedHorizontal,
+                      loadingError: _loadingError,
+                    ),
+                    EpubAppBar(
+                      handleOnDisposeReader: _handleOnDisposeReader,
+                      animation: _appBarAnimation,
+                    ),
+
+                    EpubToolbar(
+                      animation: _appBarAnimation,
+                      onPrevious: (context) {
+                        _onPreviousChapter(ctx: context);
+                      },
+                      onNext: (context) {
+                        _onNextChapter(ctx: context);
+                      },
+                    ),
+
+                    BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                        buildWhen: (prev, cur) =>
+                            prev.isShowSettingSection !=
+                            cur.isShowSettingSection,
+                        builder: (context, state) {
+                          if (state.isShowSettingSection) {
+                            return ThemeSettingPanel(
+                                animation: _themeSettingAnimation);
+                          } else {
+                            return const SizedBox();
+                          }
+                        }),
+
+                    BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                        buildWhen: (prev, cur) =>
+                            prev.isShowChaptersSection !=
+                            cur.isShowChaptersSection,
+                        builder: (context, state) {
+                          if (state.isShowChaptersSection) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(top: kToolbarHeight),
+                              child: EpubViewContents(
+                                  controller: _controller,
+                                  onSelectChapter: _onSelectChapter),
+                            );
+                          }
+                          return const SizedBox();
+                        }),
+                  ],
+                ),
               ),
-
-              BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
-                  buildWhen: (prev, cur) =>
-                      prev.isShowSettingSection != cur.isShowSettingSection,
-                  builder: (context, state) {
-                    if (state.isShowSettingSection) {
-                      return ThemeSettingPanel(
-                          animation: _themeSettingAnimation);
-                    } else {
-                      return const SizedBox();
-                    }
-                  }),
-
-              BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
-                  buildWhen: (prev, cur) =>
-                      prev.isShowChaptersSection != cur.isShowChaptersSection,
-                  builder: (context, state) {
-                    if (state.isShowChaptersSection) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: kToolbarHeight),
-                        child: EpubViewContents(
-                            controller: _controller,
-                            onSelectChapter: _onSelectChapter),
-                      );
-                    }
-                    return const SizedBox();
-                  }),
-            ],
-          ),
-        ),
-      ),
+            )
+          : widget.builders.loaderBuilder?.call(context) ??
+              const CircularProgressIndicator(),
     );
   }
 }
