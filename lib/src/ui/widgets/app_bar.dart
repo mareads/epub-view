@@ -36,6 +36,7 @@ class EpubAppBar extends StatelessWidget {
                   automaticallyImplyLeading: false,
                   elevation: 0,
                   leadingWidth: 0,
+                  centerTitle: false,
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

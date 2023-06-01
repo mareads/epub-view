@@ -374,8 +374,13 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     int paragraphCount = 0;
     dom.Element? imageResizedElement;
 
+    void newPageHandler() {}
+
     for (final paragraph in paragraphs) {
       if (paragraph.nodeType == dom.Node.ELEMENT_NODE) {
+        // print("paragraph.text");
+        // print(paragraph.text);
+        // print("========================================");
         elementPagingHandler({required dom.Element currentParagraph}) async {
           // final isNewChapter = currentChapter != currentParagraph.chapterIndex;
           final isImageTag = currentParagraph.localName == "img";
@@ -461,9 +466,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               // print("--------");
 
               /// add paragraph margin spacing to calculate formular
-              paintHeight = painter.height + fontSize * 2;
+              paintHeight = painter.height + fontSize * 1.5;
             } else {
-              paintHeight = 0;
+              paintHeight = fontSize + fontSize * 1.5;
             }
           }
           // print("paintHeight");
@@ -471,28 +476,67 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           // print("currentParagraph.text");
           // print(currentParagraph.element.text);
 
-          /// Paragraph Cutting section with recursively mechanism
-          if (paintHeight! > maxScreenHeight) {
-            final overflowHeight = paintHeight! - maxScreenHeight;
+          final pageHeightNew = currentPageHeight + paintHeight!;
 
-            /// 0.8 is tolerant ratio of 0.2 reduction
-            final newFitHeightRatio =
-                (1 - (overflowHeight / paintHeight!)) * 0.8;
+          /// Paragraph Cutting section with recursively mechanism
+          if (pageHeightNew > maxScreenHeight) {
+            final overflowHeight = pageHeightNew - maxScreenHeight;
+
+            // print("overflowHeight");
+            // print(overflowHeight);
+            // print("paintHeight");
+            // print(paintHeight);
+
+            final newFitHeightRatio = (1 - (overflowHeight / paintHeight!));
+            // print("newFitHeightRatio");
+            // print(newFitHeightRatio);
+            // print("overflowHeight");
+            // print(overflowHeight);
+            // print("pageHeightNew");
+            // print(pageHeightNew);
+            // print("maxScreenHeight");
+            // print(maxScreenHeight);
+            // print("paintHeight");
+            // print(paintHeight);
+            // print("currentPageHeight");
+            // print(currentPageHeight);
             final cutIndex =
                 (currentParagraph.text.length * newFitHeightRatio).floor();
 
             final cutWithSpaceIndex =
                 currentParagraph.text.substring(0, cutIndex).lastIndexOf(" ");
 
-            final actualCutIndex =
-                cutWithSpaceIndex == -1 ? cutIndex : cutWithSpaceIndex;
+            // print("currentParagraph.text");
+            // print(currentParagraph.text);
+            // print("cutWithSpaceIndex");
+            // print(cutWithSpaceIndex);
+
+            if (cutWithSpaceIndex == -1 && elements.isNotEmpty) {
+              pages.add(currentHorizontalParagraph.copyWith(
+                  endingParagraphNumber: paragraphCount <
+                          currentHorizontalParagraph.leadingParagraphNumber!
+                      ? paragraphCount + 1
+                      : paragraphCount,
+                  elements: dom.Element.html(
+                      '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
+              elements.clear();
+              currentHorizontalParagraph = HorizontalParagraph(
+                  leadingParagraphNumber: paragraphCount + 1);
+              currentPageHeight = 0;
+              await elementPagingHandler(currentParagraph: currentParagraph);
+              return;
+            }
 
             final newFitParagraph = dom.Element.html(
-                '<p>${currentParagraph.text.substring(0, actualCutIndex)}</p>');
+                '<p>${currentParagraph.text.substring(0, cutWithSpaceIndex + 1)}</p>');
             final nextFitParagraph = dom.Element.html(
-                '<p>${currentParagraph.text.substring(actualCutIndex + 1, currentParagraph.text.isNotEmpty ? currentParagraph.text.length : 0)}</p>');
+                '<p>${currentParagraph.text.substring(cutWithSpaceIndex + 1, currentParagraph.text.isNotEmpty ? currentParagraph.text.length : 0)}</p>');
             // debugger();
 
+            // print("currentParagraph.text");
+            // print(currentParagraph.text);
+            // print("newFitHeightRatio");
+            // print(newFitHeightRatio);
             // print("newFitParagraph");
             // print(newFitParagraph.text);
             // print("nextFitParagraph");
@@ -511,30 +555,31 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               await elementPagingHandler(currentParagraph: nextFitParagraph);
             }
           } else {
-            if (((currentPageHeight + paintHeight! > maxScreenHeight)) &&
-                elements.isNotEmpty) {
-              pages.add(currentHorizontalParagraph.copyWith(
-                  endingParagraphNumber: paragraphCount <
-                          currentHorizontalParagraph.leadingParagraphNumber!
-                      ? paragraphCount + 1
-                      : paragraphCount,
-                  elements: dom.Element.html(
-                      '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
-              elements.clear();
-              currentHorizontalParagraph = HorizontalParagraph(
-                  leadingParagraphNumber: paragraphCount + 1);
-              currentPageHeight = 0;
-              // if (isNewChapter) {
-              //   _chapterPageList.add(pages.length);
-              // }
-            }
-
             elements.add(imageResizedElement?.outerHtml ??
                 currentParagraph.outerHtml
                     .replaceFirst('<p>', '<p>$indentHtmlString'));
             currentPageHeight += paintHeight!;
             // currentChapter = currentParagraph.chapterIndex;
             imageResizedElement = null;
+
+            // print("currentPageHeight");
+            // print(currentPageHeight);
+            // print("maxScreenHeight");
+            // print(maxScreenHeight);
+
+            // if (currentPageHeight / maxScreenHeight >= 0.5) {
+            //   pages.add(currentHorizontalParagraph.copyWith(
+            //       endingParagraphNumber: paragraphCount <
+            //               currentHorizontalParagraph.leadingParagraphNumber!
+            //           ? paragraphCount + 1
+            //           : paragraphCount,
+            //       elements: dom.Element.html(
+            //           '<div>${List.from(elements).reduce((all, sum) => all + sum)}</div>')));
+            //   elements.clear();
+            //   currentHorizontalParagraph = HorizontalParagraph(
+            //       leadingParagraphNumber: paragraphCount + 1);
+            //   currentPageHeight = 0;
+            // }
           }
 
           // debugPrint("paintHeight! > maxScreenHeight");
@@ -972,96 +1017,119 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                           controller: _pageController,
                           children: snap.data!.map(
                             (element) {
-                              // print("element.elements?.outerHtml");
-                              // print(element.elements?.outerHtml);
                               return Padding(
                                 padding: padding,
-                                child: Center(
-                                  child: InteractiveViewer(
-                                    minScale: 1,
-                                    maxScale: 5,
-                                    child: Html(
-                                      data: element.elements?.outerHtml,
-                                      // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-                                      style: {
-                                        'h1': headerFontStyle,
-                                        'h2': headerFontStyle,
-                                        'h3': headerFontStyle,
-                                        'h4': headerFontStyle,
-                                        'html':
-                                            Style().merge(Style.fromTextStyle(
-                                          TextStyle(
-                                            height: state.lineHeight.value,
-                                            fontWeight: FontWeight.w300,
-                                            fontFamily: state.fontFamily.family,
-                                            fontSize:
-                                                state.fontFamily.isJsJindara
-                                                    ? state.fontSize.dataJs
-                                                    : state.fontSize.data,
-                                            color:
-                                                state.themeMode.data.textColor,
-                                          ),
-                                        )),
-                                      },
+                                child: InteractiveViewer(
+                                  minScale: 1,
+                                  maxScale: 5,
+                                  child: Html(
+                                    data: element.elements?.outerHtml,
+                                    // onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+                                    style: {
+                                      'h1': headerFontStyle,
+                                      'h2': headerFontStyle,
+                                      'h3': headerFontStyle,
+                                      'h4': headerFontStyle,
+                                      'html': Style().merge(Style.fromTextStyle(
+                                        TextStyle(
+                                          height: state.lineHeight.value,
+                                          fontWeight: FontWeight.w300,
+                                          fontFamily: state.fontFamily.family,
+                                          fontSize: state.fontFamily.isJsJindara
+                                              ? state.fontSize.dataJs
+                                              : state.fontSize.data,
+                                          color: state.themeMode.data.textColor,
+                                        ),
+                                      )),
+                                    },
 
-                                      customRenders: {
-                                        // tagMatcher('p'): CustomRender.widget(
-                                        //     widget: (context, buildChildren) {
-                                        //   return Wrap(
-                                        //     children:
-                                        //         context.tree.children.map((e) {
-                                        //       if (e is TextContentElement) {
-                                        //         return Text(
-                                        //           e.text ?? "",
-                                        //           style: TextStyle(
-                                        //             height:
-                                        //                 state.lineHeight.value,
-                                        //             fontWeight: FontWeight.w300,
-                                        //             fontFamily:
-                                        //                 state.fontFamily.family,
-                                        //             fontSize: state.fontFamily
-                                        //                     .isJsJindara
-                                        //                 ? state.fontSize.dataJs
-                                        //                 : state.fontSize.data,
-                                        //             color: state.themeMode.data
-                                        //                 .textColor,
-                                        //           ),
-                                        //         );
-                                        //       } else {
-                                        //         return const SizedBox(
-                                        //           width: 0,
-                                        //         );
-                                        //       }
-                                        //     }).toList(),
-                                        //   );
-                                        // }),
-                                        tagMatcher('img'): CustomRender.widget(
-                                            widget: (context, buildChildren) {
-                                          final url = context
-                                              .tree.element!.attributes['src']!
-                                              .replaceAll('../', '');
-                                          return Center(
-                                            child: Image(
-                                              image: MemoryImage(
-                                                Uint8List.fromList(
-                                                  widget
-                                                      .controller
-                                                      ._document!
-                                                      .Content!
-                                                      .Images![url]!
-                                                      .Content!,
-                                                ),
+                                    customRenders: {
+                                      // tagMatcher('p'): CustomRender.widget(
+                                      //     widget: (context, buildChildren) {
+                                      //   return Wrap(
+                                      //     children:
+                                      //         context.tree.children.map((e) {
+                                      //       if (e is TextContentElement) {
+                                      //         return Text(
+                                      //           e.text ?? "",
+                                      //           style: TextStyle(
+                                      //             height:
+                                      //                 state.lineHeight.value,
+                                      //             fontWeight: FontWeight.w300,
+                                      //             fontFamily:
+                                      //                 state.fontFamily.family,
+                                      //             fontSize: state.fontFamily
+                                      //                     .isJsJindara
+                                      //                 ? state.fontSize.dataJs
+                                      //                 : state.fontSize.data,
+                                      //             color: state.themeMode.data
+                                      //                 .textColor,
+                                      //           ),
+                                      //         );
+                                      //       } else {
+                                      //         return const SizedBox(
+                                      //           width: 0,
+                                      //         );
+                                      //       }
+                                      //     }).toList(),
+                                      //   );
+                                      // }),
+                                      // textContentElementMatcher():
+                                      //     CustomRender.inlineSpan(inlineSpan:
+                                      //         (context, buildChildren) {
+                                      //   inspect("context.tree.element!.text");
+                                      //   inspect(context.tree.element!.text);
+                                      //   print(
+                                      //       context.tree.element!.text.isEmpty);
+                                      //   if (context
+                                      //       .tree.element!.text.isEmpty) {
+                                      //     return const WidgetSpan(
+                                      //         child: SizedBox(
+                                      //       height: 0,
+                                      //       width: 0,
+                                      //     ));
+                                      //   }
+                                      //
+                                      //   return TextSpan(
+                                      //       text: context.tree.element?.text,
+                                      //       style: TextStyle(
+                                      //         height: context
+                                      //             .tree.style.lineHeight?.size,
+                                      //         fontWeight:
+                                      //             context.tree.style.fontWeight,
+                                      //         fontFamily:
+                                      //             context.tree.style.fontFamily,
+                                      //         fontSize: context
+                                      //             .tree.style.fontSize?.value,
+                                      //         color: context.tree.style.color,
+                                      //       ));
+                                      // }),
+                                      tagMatcher('img'): CustomRender.widget(
+                                          widget: (context, buildChildren) {
+                                        final url = context
+                                            .tree.element!.attributes['src']!
+                                            .replaceAll('../', '');
+                                        return Center(
+                                          child: Image(
+                                            image: MemoryImage(
+                                              Uint8List.fromList(
+                                                widget
+                                                    .controller
+                                                    ._document!
+                                                    .Content!
+                                                    .Images![url]!
+                                                    .Content!,
                                               ),
                                             ),
-                                          );
-                                        }),
-                                        // tagMatcher('wbr'):
-                                        //     CustomRender.inlineSpan(inlineSpan:
-                                        //         (context, buildChildren) {
-                                        //   return const TextSpan(text: "\u200B");
-                                        // }),
-                                      },
-                                    ),
+                                          ),
+                                        );
+                                      }),
+                                      // tagMatcher('wbr'):
+                                      //     CustomRender.inlineSpan(inlineSpan:
+                                      //         (context, buildChildren) {
+                                      //   return const TextSpan(text: "\u200B");
+                                      // }),
+                                    },
                                   ),
                                 ),
                               );

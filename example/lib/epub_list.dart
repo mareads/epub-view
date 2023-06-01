@@ -184,8 +184,8 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
 
   @override
   Widget build(BuildContext context) {
-    inspect("widget.epubBook.readingProgress,");
-    inspect(widget.epubBook.readingProgress);
+    // inspect("widget.epubBook.readingProgress,");
+    // inspect(widget.epubBook.readingProgress);
     return Scaffold(
       body: EpubView(
         initReadingProgress: widget.epubBook.readingProgress,

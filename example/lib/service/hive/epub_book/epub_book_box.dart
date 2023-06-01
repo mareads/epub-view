@@ -60,8 +60,8 @@ class EpubBookBox {
         // readingSettings: readingSettings,
         readingParagraphProgress: readingProgress.readingParagraphProgress,
         readingChapterProgress: readingProgress.readingChapterProgress);
-    inspect("updateBook");
-    inspect(updateBook);
+    // inspect("updateBook");
+    // inspect(updateBook);
     await box.put(key, updateBook);
   }
 
