@@ -24,6 +24,8 @@ typedef ChaptersBuilder = Widget Function(
   List<EpubChapter> chapters,
   List<dom.Element> paragraphs,
   int index,
+  double chapterNameFontSize,
+  bool isComicMode,
   // int chapterIndex,
   // int paragraphIndex,
   ExternalLinkPressed onExternalLinkPressed,

@@ -60,8 +60,10 @@ class EpubView extends StatefulWidget {
     this.onExternalLinkPressed,
     this.initReadingProgress,
     this.initReadingSettings,
+    this.isComicMode = false,
     this.onChapterChanged,
     this.onDocumentLoaded,
+    this.chapterNameFontSize = 1.5,
     this.onEpubExit,
     this.onDocumentError,
     this.builders = const EpubViewBuilders<DefaultBuilderOptions>(
@@ -81,6 +83,12 @@ class EpubView extends StatefulWidget {
 
   /// Called when a document is loaded
   final void Function(EpubBook document)? onDocumentLoaded;
+
+  /// Chapter name [h1] font size
+  final double chapterNameFontSize;
+
+  /// Comic Mode is image continually connected together with no spacing in vertical view mode
+  final bool isComicMode;
 
   /// Called when a Epub reader was disposed
   final Future<void> Function({
@@ -374,8 +382,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     int paragraphCount = 0;
     dom.Element? imageResizedElement;
 
-    void newPageHandler() {}
-
     for (final paragraph in paragraphs) {
       if (paragraph.nodeType == dom.Node.ELEMENT_NODE) {
         // print("paragraph.text");
@@ -443,7 +449,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                   height: state.lineHeight.value,
                   fontWeight: FontWeight.w300,
                   fontFamily: state.fontFamily.family,
-                  fontSize: fontSize,
+                  fontSize: currentParagraph.localName == "h1"
+                      ? fontSize * 2
+                      : fontSize,
                   color: state.themeMode.data.textColor,
                 ),
               );
@@ -794,6 +802,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     List<EpubChapter> chapters,
     List<dom.Element> paragraphs,
     int index,
+    double chapterNameFontSize,
+    bool isComicMode,
+
     // int chapterIndex,
     // int paragraphIndex,
     ExternalLinkPressed onExternalLinkPressed,
@@ -817,79 +828,94 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           TextStyle(
             height: state.lineHeight.value,
             fontFamily: state.fontFamily.family,
-            fontSize: state.fontFamily.isJsJindara
-                ? state.fontSize.dataJs
-                : state.fontSize.data,
+            fontSize: (state.fontFamily.isJsJindara
+                    ? state.fontSize.dataJs
+                    : state.fontSize.data) *
+                chapterNameFontSize,
             color: state.themeMode.data.textColor,
           ),
         ));
-        return Column(
-          children: <Widget>[
-            // if (chapterIndex >= 0 && paragraphIndex == 0)
-            //   builders.chapterDividerBuilder(chapters[chapterIndex]),
-            Html(
-              data: paragraphs[index].outerHtml,
-              onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-              style: {
-                'h1': headerFontStyle,
-                'h2': headerFontStyle,
-                'h3': headerFontStyle,
-                'h4': headerFontStyle,
-                'html': Style(
-                  padding: options.paragraphPadding as EdgeInsets?,
-                ).merge(Style.fromTextStyle(
-                  TextStyle(
-                    height: state.lineHeight.value,
-                    fontWeight: FontWeight.w300,
-                    fontFamily: state.fontFamily.family,
-                    fontSize: state.fontFamily.isJsJindara
-                        ? state.fontSize.dataJs
-                        : state.fontSize.data,
-                    color: state.themeMode.data.textColor,
+        if (isComicMode) {
+          if (paragraphs[index].localName == 'img') {
+            final url =
+                paragraphs[index].attributes['src']!.replaceAll('../', '');
+            return Image(
+              image: MemoryImage(
+                Uint8List.fromList(
+                  document.Content!.Images![url]!.Content!,
+                ),
+              ),
+            );
+          }
+          if (paragraphs[index].localName == 'br') {
+            return const SizedBox(
+              height: 0,
+              width: 0,
+            );
+          }
+        }
+
+        return Html(
+          data: paragraphs[index].outerHtml,
+          onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+          style: {
+            'h1': headerFontStyle,
+            'h2': headerFontStyle,
+            'h3': headerFontStyle,
+            'h4': headerFontStyle,
+            'html': Style(
+              padding: options.paragraphPadding as EdgeInsets?,
+            ).merge(Style.fromTextStyle(
+              TextStyle(
+                height: state.lineHeight.value,
+                fontWeight: FontWeight.w300,
+                fontFamily: state.fontFamily.family,
+                fontSize: state.fontFamily.isJsJindara
+                    ? state.fontSize.dataJs
+                    : state.fontSize.data,
+                color: state.themeMode.data.textColor,
+              ),
+            )),
+          },
+          customRenders: {
+            // tagMatcher('p'):
+            //     CustomRender.widget(widget: (context, buildChildren) {
+            //   return Wrap(
+            //     children: context.tree.children.map((e) {
+            //       if (e is TextContentElement) {
+            //         return Text(
+            //           e.text ?? "",
+            //           style: TextStyle(
+            //             height: state.lineHeight.value,
+            //             fontWeight: FontWeight.w300,
+            //             fontFamily: state.fontFamily.family,
+            //             fontSize: state.fontFamily.isJsJindara
+            //                 ? state.fontSize.dataJs
+            //                 : state.fontSize.data,
+            //             color: state.themeMode.data.textColor,
+            //           ),
+            //         );
+            //       } else {
+            //         return const SizedBox(
+            //           width: 0,
+            //         );
+            //       }
+            //     }).toList(),
+            //   );
+            // }),
+            tagMatcher('img'):
+                CustomRender.widget(widget: (context, buildChildren) {
+              final url = context.tree.element!.attributes['src']!
+                  .replaceAll('../', '');
+              return Image(
+                image: MemoryImage(
+                  Uint8List.fromList(
+                    document.Content!.Images![url]!.Content!,
                   ),
-                )),
-              },
-              customRenders: {
-                // tagMatcher('p'):
-                //     CustomRender.widget(widget: (context, buildChildren) {
-                //   return Wrap(
-                //     children: context.tree.children.map((e) {
-                //       if (e is TextContentElement) {
-                //         return Text(
-                //           e.text ?? "",
-                //           style: TextStyle(
-                //             height: state.lineHeight.value,
-                //             fontWeight: FontWeight.w300,
-                //             fontFamily: state.fontFamily.family,
-                //             fontSize: state.fontFamily.isJsJindara
-                //                 ? state.fontSize.dataJs
-                //                 : state.fontSize.data,
-                //             color: state.themeMode.data.textColor,
-                //           ),
-                //         );
-                //       } else {
-                //         return const SizedBox(
-                //           width: 0,
-                //         );
-                //       }
-                //     }).toList(),
-                //   );
-                // }),
-                tagMatcher('img'):
-                    CustomRender.widget(widget: (context, buildChildren) {
-                  final url = context.tree.element!.attributes['src']!
-                      .replaceAll('../', '');
-                  return Image(
-                    image: MemoryImage(
-                      Uint8List.fromList(
-                        document.Content!.Images![url]!.Content!,
-                      ),
-                    ),
-                  );
-                }),
-              },
-            ),
-          ],
+                ),
+              );
+            }),
+          },
         );
       },
     );
@@ -913,6 +939,8 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           _chapters,
           _chapterParagraphs[_selectedChapterIndex]!.paragraphs,
           index,
+          widget.chapterNameFontSize,
+          widget.isComicMode,
           // _getChapterIndexBy(positionIndex: index),
           // _getParagraphIndexBy(positionIndex: index),
           _onLinkPressed,
@@ -946,9 +974,10 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           TextStyle(
             height: state.lineHeight.value,
             fontFamily: state.fontFamily.family,
-            fontSize: state.fontFamily.isJsJindara
-                ? state.fontSize.dataJs
-                : state.fontSize.data,
+            fontSize: (state.fontFamily.isJsJindara
+                    ? state.fontSize.dataJs
+                    : state.fontSize.data) *
+                widget.chapterNameFontSize,
             color: state.themeMode.data.textColor,
           ),
         ));
