@@ -1,15 +1,8 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:epub_view/epub_view.dart';
 import 'package:epub_view_example/bloc/epub_manager_bloc.dart';
 import 'package:epub_view_example/core/model/epub_book/epub_book_model.dart';
-import 'package:epub_view_example/service/hive/epub_book/model/enums/font_family.dart';
-import 'package:epub_view_example/service/hive/epub_book/model/enums/font_size.dart';
-import 'package:epub_view_example/service/hive/epub_book/model/enums/line_height.dart';
-import 'package:epub_view_example/service/hive/epub_book/model/enums/reader_mode.dart';
-import 'package:epub_view_example/service/hive/epub_book/model/enums/theme_mode.dart';
-import 'package:epub_view_example/service/hive/epub_book/model/reading_settings.dart';
 import 'package:epub_view_example/service/hive/hive_service.dart';
 import 'package:epub_view_example/widgets/epub_book.dart';
 import 'package:epub_view_example/widgets/update_percent_dialog.dart';
@@ -193,6 +186,10 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
         // initReadingSettings: widget.epubBook.readingSettings,
         builders: EpubViewBuilders<DefaultBuilderOptions>(
             options: const DefaultBuilderOptions(
+              mobileParagraphPadding:
+                  EdgeInsets.symmetric(vertical: 18, horizontal: 18),
+              tabletParagraphPadding:
+                  EdgeInsets.symmetric(vertical: 36, horizontal: 36),
               textStyle: TextStyle(
                   fontSize: 18, fontWeight: FontWeight.w300, height: 1.5),
             ),

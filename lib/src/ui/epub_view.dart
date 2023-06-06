@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -63,6 +62,7 @@ class EpubView extends StatefulWidget {
     this.isComicMode = false,
     this.onChapterChanged,
     this.onDocumentLoaded,
+    this.indentCount = 8,
     this.chapterNameFontSize = 1.5,
     this.onEpubExit,
     this.onDocumentError,
@@ -95,6 +95,9 @@ class EpubView extends StatefulWidget {
     required ReadingProgress readingProgress,
   })? onEpubExit;
 
+  /// indent amount of starting paragraph
+  final int indentCount;
+
   /// Called when a document loading error
   final void Function(Exception? error)? onDocumentError;
 
@@ -108,6 +111,7 @@ class EpubView extends StatefulWidget {
 class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   Exception? _loadingError;
 
+  late final bool _isTablet;
   ItemScrollController? _itemScrollController;
   ItemPositionsListener? _itemPositionListener;
   List<EpubChapter> _chapters = [];
@@ -136,6 +140,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    Future.delayed(Duration.zero, () {
+      _isTablet = MediaQuery.of(context).size.shortestSide >= 768;
+    });
 
     _selectedChapterIndex =
         widget.initReadingProgress?.readingChapterProgress ?? 0;
@@ -369,16 +376,14 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         MediaQuery.of(context).padding.right;
     final paddingWidth = (padding.horizontal * 2) + horizontalSafeAreaPixel;
 
-    final maxScreenHeight =
-        screenHeight - verticalSafeAreaPixel - (padding.vertical * 2);
+    final maxScreenHeight = screenHeight - verticalSafeAreaPixel;
 
     double? paintHeight;
     final fontSize = state.fontFamily.isJsJindara
         ? state.fontSize.dataJs
         : state.fontSize.data;
-    const indentCount = 8;
-    final indentDartString = " " * indentCount;
-    final indentHtmlString = "&nbsp;" * indentCount;
+    final indentDartString = " " * widget.indentCount;
+    final indentHtmlString = "&nbsp;" * widget.indentCount;
     int paragraphCount = 0;
     dom.Element? imageResizedElement;
 
@@ -804,6 +809,8 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     int index,
     double chapterNameFontSize,
     bool isComicMode,
+    bool isTablet,
+    int indentCount,
 
     // int chapterIndex,
     // int paragraphIndex,
@@ -854,68 +861,60 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             );
           }
         }
-
-        return Html(
-          data: paragraphs[index].outerHtml,
-          onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
-          style: {
-            'h1': headerFontStyle,
-            'h2': headerFontStyle,
-            'h3': headerFontStyle,
-            'h4': headerFontStyle,
-            'html': Style(
-              padding: options.paragraphPadding as EdgeInsets?,
-            ).merge(Style.fromTextStyle(
-              TextStyle(
-                height: state.lineHeight.value,
-                fontWeight: FontWeight.w300,
-                fontFamily: state.fontFamily.family,
-                fontSize: state.fontFamily.isJsJindara
-                    ? state.fontSize.dataJs
-                    : state.fontSize.data,
-                color: state.themeMode.data.textColor,
-              ),
-            )),
-          },
-          customRenders: {
-            // tagMatcher('p'):
-            //     CustomRender.widget(widget: (context, buildChildren) {
-            //   return Wrap(
-            //     children: context.tree.children.map((e) {
-            //       if (e is TextContentElement) {
-            //         return Text(
-            //           e.text ?? "",
-            //           style: TextStyle(
-            //             height: state.lineHeight.value,
-            //             fontWeight: FontWeight.w300,
-            //             fontFamily: state.fontFamily.family,
-            //             fontSize: state.fontFamily.isJsJindara
-            //                 ? state.fontSize.dataJs
-            //                 : state.fontSize.data,
-            //             color: state.themeMode.data.textColor,
-            //           ),
-            //         );
-            //       } else {
-            //         return const SizedBox(
-            //           width: 0,
-            //         );
-            //       }
-            //     }).toList(),
-            //   );
-            // }),
-            tagMatcher('img'):
-                CustomRender.widget(widget: (context, buildChildren) {
-              final url = context.tree.element!.attributes['src']!
-                  .replaceAll('../', '');
-              return Image(
-                image: MemoryImage(
-                  Uint8List.fromList(
-                    document.Content!.Images![url]!.Content!,
-                  ),
+        return Padding(
+          padding: isTablet
+              ? options.tabletParagraphPadding
+              : options.mobileParagraphPadding,
+          child: Html(
+            data: paragraphs[index].outerHtml,
+            onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+            style: {
+              'h1': headerFontStyle,
+              'h2': headerFontStyle,
+              'h3': headerFontStyle,
+              'h4': headerFontStyle,
+              'html': Style().merge(Style.fromTextStyle(
+                TextStyle(
+                  height: state.lineHeight.value,
+                  fontWeight: FontWeight.w300,
+                  fontFamily: state.fontFamily.family,
+                  fontSize: state.fontFamily.isJsJindara
+                      ? state.fontSize.dataJs
+                      : state.fontSize.data,
+                  color: state.themeMode.data.textColor,
                 ),
-              );
-            }),
-          },
+              )),
+            },
+            customRenders: {
+              tagMatcher('p'):
+                  CustomRender.widget(widget: (context, buildChildren) {
+                return Text(
+                  " " * indentCount + (context.tree.element?.text ?? ""),
+                  style: TextStyle(
+                    height: state.lineHeight.value,
+                    fontWeight: FontWeight.w300,
+                    fontFamily: state.fontFamily.family,
+                    fontSize: state.fontFamily.isJsJindara
+                        ? state.fontSize.dataJs
+                        : state.fontSize.data,
+                    color: state.themeMode.data.textColor,
+                  ),
+                );
+              }),
+              tagMatcher('img'):
+                  CustomRender.widget(widget: (context, buildChildren) {
+                final url = context.tree.element!.attributes['src']!
+                    .replaceAll('../', '');
+                return Image(
+                  image: MemoryImage(
+                    Uint8List.fromList(
+                      document.Content!.Images![url]!.Content!,
+                    ),
+                  ),
+                );
+              }),
+            },
+          ),
         );
       },
     );
@@ -941,6 +940,8 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
           index,
           widget.chapterNameFontSize,
           widget.isComicMode,
+          _isTablet,
+          widget.indentCount,
           // _getChapterIndexBy(positionIndex: index),
           // _getParagraphIndexBy(positionIndex: index),
           _onLinkPressed,
@@ -961,7 +962,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
         final defaultBuilder =
             widget.builders as EpubViewBuilders<DefaultBuilderOptions>;
         DefaultBuilderOptions options = defaultBuilder.options;
-        final padding = options.paragraphPadding;
+        final padding = _isTablet
+            ? options.tabletParagraphPadding
+            : options.mobileParagraphPadding;
         Future<List<HorizontalParagraph>> pages = paragraphsToPagesHandler(
             _chapterParagraphs[_selectedChapterIndex]!.paragraphs,
             state,

@@ -26,6 +26,8 @@ typedef ChaptersBuilder = Widget Function(
   int index,
   double chapterNameFontSize,
   bool isComicMode,
+  bool isTablet,
+  int indentCount,
   // int chapterIndex,
   // int paragraphIndex,
   ExternalLinkPressed onExternalLinkPressed,
@@ -69,14 +71,16 @@ class DefaultBuilderOptions {
   final Duration loaderSwitchDuration;
   final AnimatedSwitcherTransitionBuilder transitionBuilder;
   final EdgeInsetsGeometry chapterPadding;
-  final EdgeInsetsGeometry paragraphPadding;
+  final EdgeInsetsGeometry mobileParagraphPadding;
+  final EdgeInsetsGeometry tabletParagraphPadding;
   final TextStyle textStyle;
 
   const DefaultBuilderOptions({
     this.loaderSwitchDuration = const Duration(seconds: 1),
     this.transitionBuilder = DefaultBuilderOptions._transitionBuilder,
     this.chapterPadding = const EdgeInsets.all(8),
-    this.paragraphPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.mobileParagraphPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.tabletParagraphPadding = const EdgeInsets.symmetric(horizontal: 32),
     this.textStyle = const TextStyle(
       height: 1.25,
       fontSize: 16,
