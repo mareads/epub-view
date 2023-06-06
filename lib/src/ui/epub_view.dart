@@ -455,7 +455,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                   fontWeight: FontWeight.w300,
                   fontFamily: state.fontFamily.family,
                   fontSize: currentParagraph.localName == "h1"
-                      ? fontSize * 2
+                      ? fontSize * widget.chapterNameFontSize
                       : fontSize,
                   color: state.themeMode.data.textColor,
                 ),
@@ -479,9 +479,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               // print("--------");
 
               /// add paragraph margin spacing to calculate formular
-              paintHeight = painter.height + fontSize * 1.5;
+              paintHeight = painter.height + fontSize;
             } else {
-              paintHeight = fontSize + fontSize * 1.5;
+              paintHeight = fontSize + fontSize;
             }
           }
           // print("paintHeight");
