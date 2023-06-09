@@ -1150,6 +1150,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       }
       _changeListener();
     }
+    ctx.read<ReaderSettingCubit>().onToggleAppBar();
   }
 
   static Widget _builder(
