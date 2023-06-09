@@ -9,8 +9,8 @@ import 'navigator_button.dart';
 
 class EpubAppBar extends StatelessWidget {
   final Function handleOnDisposeReader;
-  const EpubAppBar(
-      {Key? key, required this.animation, required this.handleOnDisposeReader})
+
+  const EpubAppBar({Key? key, required this.animation, required this.handleOnDisposeReader})
       : super(key: key);
 
   final Animation<double> animation;
@@ -21,7 +21,10 @@ class EpubAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
       buildWhen: (prev, cur) =>
-          prev.themeMode != cur.themeMode || prev.isShowToc != cur.isShowToc,
+          prev.themeMode != cur.themeMode ||
+          prev.isShowToc != cur.isShowToc ||
+          prev.isShowSettingSection != cur.isShowSettingSection ||
+          prev.isShowChaptersSection != cur.isShowChaptersSection,
       builder: (_, state) {
         return Align(
           alignment: Alignment.topCenter,
@@ -52,24 +55,20 @@ class EpubAppBar extends StatelessWidget {
                       const SizedBox(width: 20),
                       InkWell(
                         onTap: () {
-                          context
-                              .read<ReaderSettingCubit>()
-                              .onToggleChapterSection();
+                          context.read<ReaderSettingCubit>().onToggleChapterSection();
                         },
-                        overlayColor:
-                            MaterialStateProperty.all(Colors.transparent),
+                        overlayColor: MaterialStateProperty.all(Colors.transparent),
                         child: Container(
                           width: 128,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: state.themeMode.isLightMode ||
-                                    state.themeMode.isSepiaMode
+                            color: state.themeMode.isLightMode || state.themeMode.isSepiaMode
                                 ? const Color(0xFFF4F4F7)
                                 : const Color(0xff343434),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: BlocBuilder<ReaderSettingCubit,
-                              ReaderSettingState>(builder: (context, state) {
+                          child: BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                              builder: (context, state) {
                             return Row(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -106,16 +105,13 @@ class EpubAppBar extends StatelessWidget {
                         GestureDetector(
                           key: themeSettingKey,
                           onTap: () {
-                            context
-                                .read<ReaderSettingCubit>()
-                                .onToggleSettingSection();
+                            context.read<ReaderSettingCubit>().onToggleSettingSection();
                           },
                           child: Container(
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: state.themeMode.isLightMode ||
-                                      state.themeMode.isSepiaMode
+                              color: state.themeMode.isLightMode || state.themeMode.isSepiaMode
                                   ? const Color(0xFFF4F4F7)
                                   : const Color(0xff343434),
                               borderRadius: BorderRadius.circular(15),

@@ -1247,20 +1247,6 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                       buildLoadedHorizontal: _buildLoadedHorizontal,
                       loadingError: _loadingError,
                     ),
-                    EpubAppBar(
-                      handleOnDisposeReader: _handleOnDisposeReader,
-                      animation: _appBarAnimation,
-                    ),
-
-                    EpubToolbar(
-                      animation: _appBarAnimation,
-                      onPrevious: (context) {
-                        _onPreviousChapter(ctx: context);
-                      },
-                      onNext: (context) {
-                        _onNextChapter(ctx: context);
-                      },
-                    ),
 
                     BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
                         buildWhen: (prev, cur) =>
@@ -1290,6 +1276,21 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                           }
                           return const SizedBox();
                         }),
+
+                    EpubAppBar(
+                      handleOnDisposeReader: _handleOnDisposeReader,
+                      animation: _appBarAnimation,
+                    ),
+
+                    EpubToolbar(
+                      animation: _appBarAnimation,
+                      onPrevious: (context) {
+                        _onPreviousChapter(ctx: context);
+                      },
+                      onNext: (context) {
+                        _onNextChapter(ctx: context);
+                      },
+                    ),
                   ],
                 ),
               ),

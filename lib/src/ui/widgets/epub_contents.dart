@@ -163,15 +163,27 @@ class EpubViewContents extends StatelessWidget {
             duration: const Duration(milliseconds: 250),
             transitionBuilder: (Widget child, Animation<double> animation) =>
                 FadeTransition(opacity: animation, child: child),
-            child: Material(
-              elevation: 8.0,
-              textStyle: _style,
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 400),
-                decoration: BoxDecoration(color: backgroundColor),
-                padding: const EdgeInsets.all(4),
-                child: content,
-              ),
+            child: Stack(
+              children: [
+                InkWell(
+                  onTap: () => context.read<ReaderSettingCubit>().onToggleChapterSection(),
+                  child: Container(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    color: Colors.black.withOpacity(.3),
+                  ),
+                ),
+                Material(
+                  elevation: 8.0,
+                  textStyle: _style,
+                  child: Container(
+                    constraints: const BoxConstraints(maxHeight: 400),
+                    decoration: BoxDecoration(color: backgroundColor),
+                    padding: const EdgeInsets.all(4),
+                    child: content,
+                  ),
+                ),
+              ],
             ),
           );
         },
