@@ -15,6 +15,7 @@ class EpubViewContents extends StatelessWidget {
     required this.onSelectChapter,
     this.scrollController,
     this.contentHeight = 38,
+    this.readerSettingState,
   }) : super(key: key);
 
   final void Function({required int chapterIndex, required BuildContext ctx})
@@ -22,25 +23,26 @@ class EpubViewContents extends StatelessWidget {
   final EpubController controller;
   final ScrollController? scrollController;
   final double contentHeight;
+  final ReaderSettingState? readerSettingState;
 
   static final TextStyle _style =
       GoogleFonts.sarabun(fontSize: 14, fontWeight: FontWeight.w300);
 
-  ReaderSettingState get readerSettingState =>
-      controller.readerSettingController.state;
+  ReaderSettingState get _readerSettingState =>
+      readerSettingState ?? controller.readerSettingController.state;
 
-  Color get backgroundColor => readerSettingState.themeMode.isLightMode ||
-          readerSettingState.themeMode.isSepiaMode
+  Color get backgroundColor => _readerSettingState.themeMode.isLightMode ||
+      _readerSettingState.themeMode.isSepiaMode
       ? const Color(0xffffffff)
       : const Color(0xff262626);
 
-  Color get trackColor => readerSettingState.themeMode.isLightMode ||
-          readerSettingState.themeMode.isSepiaMode
+  Color get trackColor => _readerSettingState.themeMode.isLightMode ||
+      _readerSettingState.themeMode.isSepiaMode
       ? const Color(0xfff4f2ec)
       : const Color(0xff434343);
 
   Color get focusBackgroundColor {
-    switch (readerSettingState.themeMode.name) {
+    switch (_readerSettingState.themeMode.name) {
       case "light":
         return const Color(0xfff1f9ff);
       case "sepia":
@@ -104,7 +106,7 @@ class EpubViewContents extends StatelessWidget {
                     final contentStyle = _style.copyWith(
                         color: isFocus
                             ? const Color(0xff3f54d9)
-                            : readerSettingState.themeMode.data.textColor);
+                            : _readerSettingState.themeMode.data.textColor);
 
                     return SizedBox(
                       height: contentHeight,
