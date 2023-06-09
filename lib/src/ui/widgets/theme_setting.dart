@@ -68,43 +68,55 @@ class _ThemeSettingPanelState extends State<ThemeSettingPanel> {
         padding: const EdgeInsets.only(top: kToolbarHeight),
         child: FadeTransition(
           opacity: widget.animation,
-          child: Material(
-            elevation: 8.0,
-            color: state.themeMode.data.backgroundColor,
-            textStyle: GoogleFonts.mitr(
-              fontSize: 14,
-              color: state.themeMode.data.textColor,
-            ),
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height -
-                    (kToolbarHeight * 2 + 78),
+          child: Stack(
+            children: [
+              InkWell(
+                onTap: () => context.read<ReaderSettingCubit>().onToggleSettingSection(),
+                child: Container(
+                  height: MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                  color: Colors.black.withOpacity(.3),
+                ),
               ),
-              decoration: BoxDecoration(
-                border: Border(
-                    top: BorderSide(color: state.themeMode.data.borderColor)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const BouncingScrollPhysics(),
-                itemCount: 6,
-                itemBuilder: (_, i) => [
-                  BrightnessSettingWidget(
-                    themeMode: state.themeMode,
-                    brightNessValue: _brightnessLevel,
-                    onChanged: _setBrightness,
+              Material(
+                elevation: 8.0,
+                color: state.themeMode.data.backgroundColor,
+                textStyle: GoogleFonts.mitr(
+                  fontSize: 14,
+                  color: state.themeMode.data.textColor,
+                ),
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height -
+                        (kToolbarHeight * 2 + 78),
                   ),
-                  const AppThemeModeWidget(),
-                  const FontsStyleWidget(),
-                  const FontsSizeWidget(),
-                  const LineHeightWidget(),
-                  const ReaderTypeWidget(),
-                ][i],
-                separatorBuilder: (_, __) =>
-                    _Spacing(dividerColor: state.themeMode.data.dividerColor),
+                  decoration: BoxDecoration(
+                    border: Border(
+                        top: BorderSide(color: state.themeMode.data.borderColor)),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: 6,
+                    itemBuilder: (_, i) => [
+                      BrightnessSettingWidget(
+                        themeMode: state.themeMode,
+                        brightNessValue: _brightnessLevel,
+                        onChanged: _setBrightness,
+                      ),
+                      const AppThemeModeWidget(),
+                      const FontsStyleWidget(),
+                      const FontsSizeWidget(),
+                      const LineHeightWidget(),
+                      const ReaderTypeWidget(),
+                    ][i],
+                    separatorBuilder: (_, __) =>
+                        _Spacing(dividerColor: state.themeMode.data.dividerColor),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
