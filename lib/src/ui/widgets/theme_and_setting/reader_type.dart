@@ -18,7 +18,7 @@ class ReaderTypeWidget extends StatelessWidget {
         const SizedBox(height: 8),
         BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
           bloc: context.read<ReaderSettingCubit>(),
-          buildWhen: (prev, cur) => prev.readerMode != cur.readerMode,
+          buildWhen: (prev, cur) => prev.readerMode != cur.readerMode || prev.themeMode != cur.themeMode,
           builder: (_, state) {
             return Row(
                 mainAxisSize: MainAxisSize.max,
