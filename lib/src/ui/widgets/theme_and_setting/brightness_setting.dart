@@ -26,10 +26,12 @@ class BrightnessSettingWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Image.asset(
-              "assets/images/brightness_setting@3x.png",
+              themeMode.isDarkMode
+                  ? "assets/images/brightness_setting_white@3x.png"
+                  : "assets/images/brightness_setting@3x.png",
               width: 30,
               height: 30,
-              color: themeMode.data.textColor,
+              color: themeMode.isDarkMode ? null : themeMode.data.textColor,
               package: "epub_view",
             ),
             const SizedBox(width: 15),

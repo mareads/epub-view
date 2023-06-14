@@ -64,7 +64,9 @@ class EpubAppBar extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: state.themeMode.isLightMode || state.themeMode.isSepiaMode
                                 ? const Color(0xFFF4F4F7)
-                                : const Color(0xff343434),
+                                : state.themeMode.isDarkMode
+                                    ? const Color(0xffffffff)
+                                    : const Color(0xff343434),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
@@ -77,7 +79,9 @@ class EpubAppBar extends StatelessWidget {
                                   "assets/icons/menu_chapter.svg",
                                   color: state.isShowChaptersSection
                                       ? Theme.of(context).colorScheme.primary
-                                      : state.themeMode.data.textColor,
+                                      : state.themeMode.isDarkMode
+                                          ? const Color(0xff0c1135)
+                                          : state.themeMode.data.textColor,
                                   package: "epub_view",
                                 ),
                                 const SizedBox(width: 5),
@@ -88,7 +92,9 @@ class EpubAppBar extends StatelessWidget {
                                     fontWeight: FontWeight.w300,
                                     color: state.isShowChaptersSection
                                         ? Theme.of(context).colorScheme.primary
-                                        : state.themeMode.data.textColor,
+                                        : state.themeMode.isDarkMode
+                                            ? const Color(0xff0c1135)
+                                            : state.themeMode.data.textColor,
                                   ),
                                 )
                               ],
@@ -113,7 +119,9 @@ class EpubAppBar extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: state.themeMode.isLightMode || state.themeMode.isSepiaMode
                                   ? const Color(0xFFF4F4F7)
-                                  : const Color(0xff343434),
+                                  : state.themeMode.isDarkMode
+                                      ? const Color(0xffffffff)
+                                      : const Color(0xff343434),
                               borderRadius: BorderRadius.circular(15),
                             ),
                             alignment: Alignment.center,
@@ -124,7 +132,9 @@ class EpubAppBar extends StatelessWidget {
                               height: 24,
                               color: state.isShowSettingSection
                                   ? Theme.of(context).colorScheme.primary
-                                  : state.themeMode.data.textColor,
+                                  : state.themeMode.isDarkMode
+                                      ? const Color(0xff0c1135)
+                                      : state.themeMode.data.textColor,
                               package: "epub_view",
                             ),
                           ),
