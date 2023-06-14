@@ -18,7 +18,8 @@ class ReaderTypeWidget extends StatelessWidget {
         const SizedBox(height: 8),
         BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
           bloc: context.read<ReaderSettingCubit>(),
-          buildWhen: (prev, cur) => prev.readerMode != cur.readerMode || prev.themeMode != cur.themeMode,
+          buildWhen: (prev, cur) =>
+              prev.readerMode != cur.readerMode || prev.themeMode != cur.themeMode,
           builder: (_, state) {
             return Row(
                 mainAxisSize: MainAxisSize.max,
@@ -38,9 +39,7 @@ class ReaderTypeWidget extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () {
                         if (isSelected) return;
-                        context
-                            .read<ReaderSettingCubit>()
-                            .onReaderModeChanged(e);
+                        context.read<ReaderSettingCubit>().onReaderModeChanged(e);
                       },
                       child: Container(
                         width: 30,
@@ -53,6 +52,16 @@ class ReaderTypeWidget extends StatelessWidget {
                               color: isSelected
                                   ? Theme.of(context).colorScheme.secondary
                                   : state.themeMode.data.borderColor),
+                          boxShadow: isSelected && !state.themeMode.isDarkenedMode
+                              ? [
+                            BoxShadow(
+                              color: Theme.of(context).colorScheme.secondary.withOpacity(.4),
+                              offset: const Offset(2, 3),
+                              blurRadius: 10,
+                              spreadRadius: -3,
+                            ),
+                          ]
+                              : null,
                         ),
                         alignment: Alignment.center,
                         child: Transform.rotate(

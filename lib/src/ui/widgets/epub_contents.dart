@@ -18,28 +18,26 @@ class EpubViewContents extends StatelessWidget {
     this.readerSettingState,
   }) : super(key: key);
 
-  final void Function({required int chapterIndex, required BuildContext ctx})
-      onSelectChapter;
+  final void Function({required int chapterIndex, required BuildContext ctx}) onSelectChapter;
   final EpubController controller;
   final ScrollController? scrollController;
   final double contentHeight;
   final ReaderSettingState? readerSettingState;
 
-  static final TextStyle _style =
-      GoogleFonts.sarabun(fontSize: 14, fontWeight: FontWeight.w300);
+  static final TextStyle _style = GoogleFonts.sarabun(fontSize: 14, fontWeight: FontWeight.w300);
 
   ReaderSettingState get _readerSettingState =>
       readerSettingState ?? controller.readerSettingController.state;
 
-  Color get backgroundColor => _readerSettingState.themeMode.isLightMode ||
-      _readerSettingState.themeMode.isSepiaMode
-      ? const Color(0xffffffff)
-      : const Color(0xff262626);
+  Color get backgroundColor =>
+      _readerSettingState.themeMode.isLightMode || _readerSettingState.themeMode.isSepiaMode
+          ? const Color(0xffffffff)
+          : const Color(0xff262626);
 
-  Color get trackColor => _readerSettingState.themeMode.isLightMode ||
-      _readerSettingState.themeMode.isSepiaMode
-      ? const Color(0xfff4f2ec)
-      : const Color(0xff434343);
+  Color get trackColor =>
+      _readerSettingState.themeMode.isLightMode || _readerSettingState.themeMode.isSepiaMode
+          ? const Color(0xfff4f2ec)
+          : const Color(0xff434343);
 
   Color get focusBackgroundColor {
     switch (_readerSettingState.themeMode.name) {
@@ -58,8 +56,7 @@ class EpubViewContents extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scroll =
-        scrollController ?? ScrollController(debugLabel: "EpubViewContents");
+    final scroll = scrollController ?? ScrollController(debugLabel: "EpubViewContents");
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // final index = controller.tableOfContentsListenable.value.indexWhere(
@@ -74,8 +71,7 @@ class EpubViewContents extends StatelessWidget {
 
     return ValueListenableBuilder<EpubChapterViewValue?>(
       valueListenable: controller.currentValueListenable,
-      builder: (_, chapterData, childA) =>
-          ValueListenableBuilder<List<EpubViewChapter>>(
+      builder: (_, chapterData, childA) => ValueListenableBuilder<List<EpubViewChapter>>(
         valueListenable: controller.tableOfContentsListenable,
         builder: (__, data, childB) {
           Widget content;
@@ -84,10 +80,11 @@ class EpubViewContents extends StatelessWidget {
             content = Theme(
               data: Theme.of(context).copyWith(
                 scrollbarTheme: ScrollbarThemeData(
-                  crossAxisMargin:
-                      Theme.of(context).scrollbarTheme.crossAxisMargin,
+                  crossAxisMargin: Theme.of(context).scrollbarTheme.crossAxisMargin,
                   mainAxisMargin: 2,
-                  thumbColor: Theme.of(context).scrollbarTheme.thumbColor,
+                  thumbColor: _readerSettingState.themeMode.isDarkMode
+                      ? const MaterialStatePropertyAll(Color(0xff858baf))
+                      : Theme.of(context).scrollbarTheme.thumbColor,
                   trackColor: MaterialStateProperty.all(trackColor),
                   radius: Theme.of(context).scrollbarTheme.radius,
                   thumbVisibility: MaterialStateProperty.all(true),
@@ -105,16 +102,19 @@ class EpubViewContents extends StatelessWidget {
 
                     final contentStyle = _style.copyWith(
                         color: isFocus
-                            ? const Color(0xff3f54d9)
-                            : _readerSettingState.themeMode.data.textColor);
+                            ? _readerSettingState.themeMode.isDarkMode
+                                ? const Color(0xffffffff)
+                                : const Color(0xff3f54d9)
+                            : _readerSettingState.themeMode.isDarkMode
+                                ? const Color(0xff858baf)
+                                : _readerSettingState.themeMode.data.textColor);
 
                     return SizedBox(
                       height: contentHeight,
                       child: Material(
                         color: isFocus ? focusBackgroundColor : backgroundColor,
-                        child:
-                            BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
-                                builder: (context, state) {
+                        child: BlocBuilder<ReaderSettingCubit, ReaderSettingState>(
+                            builder: (context, state) {
                           return ListTile(
                             horizontalTitleGap: 0,
                             minVerticalPadding: 0,
@@ -128,8 +128,7 @@ class EpubViewContents extends StatelessWidget {
                               style: contentStyle,
                             ),
                             onTap: () async {
-                              onSelectChapter(
-                                  chapterIndex: index, ctx: context);
+                              onSelectChapter(chapterIndex: index, ctx: context);
                               // if (state.readerMode.isHorizontal) {
                               //   chapterData?.onHorizontalPageChange(
                               //       chapterId: index);

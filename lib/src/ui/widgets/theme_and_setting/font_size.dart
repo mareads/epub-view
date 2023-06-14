@@ -57,6 +57,17 @@ class FontsSizeWidget extends StatelessWidget {
                                   color: isSelected
                                       ? Theme.of(context).colorScheme.secondary
                                       : state.themeMode.data.borderColor),
+                              boxShadow: isSelected && !state.themeMode.isDarkenedMode
+                                  ? [
+                                      BoxShadow(
+                                        color:
+                                            Theme.of(context).colorScheme.secondary.withOpacity(.4),
+                                        offset: const Offset(2, 3),
+                                        blurRadius: 10,
+                                        spreadRadius: -3,
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             alignment: Alignment.center,
                             child: SvgPicture.asset(

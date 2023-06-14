@@ -20,8 +20,7 @@ class LineHeightWidget extends StatelessWidget {
             return Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.start,
-              children:
-                  EpubLineHeight.values.asMap().entries.map<Widget>((item) {
+              children: EpubLineHeight.values.asMap().entries.map<Widget>((item) {
                 bool isSelected = state.lineHeight.type == item.value.type;
                 Color backgroundColor = context
                     .read<ReaderSettingCubit>()
@@ -36,9 +35,7 @@ class LineHeightWidget extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () {
                       if (isSelected) return;
-                      context
-                          .read<ReaderSettingCubit>()
-                          .onLineHeightChanged(item.value);
+                      context.read<ReaderSettingCubit>().onLineHeightChanged(item.value);
                     },
                     child: Container(
                       width: 30,
@@ -51,6 +48,16 @@ class LineHeightWidget extends StatelessWidget {
                             color: isSelected
                                 ? Theme.of(context).colorScheme.secondary
                                 : state.themeMode.data.borderColor),
+                        boxShadow: isSelected && !state.themeMode.isDarkenedMode
+                            ? [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.secondary.withOpacity(.4),
+                                  offset: const Offset(2, 3),
+                                  blurRadius: 10,
+                                  spreadRadius: -3,
+                                ),
+                              ]
+                            : null,
                       ),
                       alignment: Alignment.center,
                       child: SvgPicture.asset(

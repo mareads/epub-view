@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
 class ColorTheme {
-  static ColorTheme lightColorTheme = ColorTheme(
-    backgroundColor: const Color(0xffffffff),
-    buttonBackgroundColor: const Color(0xffffffff).withOpacity(.6),
-    brightnessBackgroundColor: const Color(0xfff4f4f7),
-    textColor: const Color(0xff0c1135),
-    borderColor: const Color(0xffeeeeee),
-    dividerColor: const Color(0xffeeeeee),
+  static ColorTheme lightColorTheme = const ColorTheme(
+    backgroundColor: Color(0xffffffff),
+    buttonBackgroundColor: Color(0xffffffff),
+    brightnessBackgroundColor: Color(0xfff4f4f7),
+    textColor: Color(0xff0c1135),
+    borderColor: Color(0xffeeeeee),
+    dividerColor: Color(0xffeeeeee),
   );
-  static ColorTheme sepiaColorTheme = ColorTheme(
-    backgroundColor: const Color(0xfff8f6f0),
-    buttonBackgroundColor: const Color(0xffffffff).withOpacity(.6),
-    brightnessBackgroundColor: const Color(0xffe4dccf),
-    textColor: const Color(0xff0c1135),
-    borderColor: const Color(0xffe0d7c9),
-    dividerColor: const Color(0xffeeeeee),
+  static ColorTheme sepiaColorTheme = const ColorTheme(
+    backgroundColor: Color(0xfff8f6f0),
+    buttonBackgroundColor: Color(0xffffffff),
+    brightnessBackgroundColor: Color(0xffe4dccf),
+    textColor: Color(0xff0c1135),
+    borderColor: Color(0xffe0d7c9),
+    dividerColor: Color(0xffeeeeee),
   );
   static ColorTheme nightWhileColorTheme = const ColorTheme(
     backgroundColor: Color(0xFF222222),
