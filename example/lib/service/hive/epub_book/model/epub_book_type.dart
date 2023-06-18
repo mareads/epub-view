@@ -25,6 +25,9 @@ class EpubBookType extends HiveObject with EquatableMixin {
   @HiveField(5)
   final int? readingChapterProgress;
 
+  @HiveField(6)
+  final bool? isReading;
+
   // @HiveField(5)
   // final ReadingSettingsType? readingSettings;
 
@@ -35,6 +38,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
     this.file,
     this.readingParagraphProgress,
     this.readingChapterProgress,
+    this.isReading,
     // this.readingSettings,
   });
 
@@ -45,10 +49,12 @@ class EpubBookType extends HiveObject with EquatableMixin {
     Uint8List? file,
     int? readingParagraphProgress,
     int? readingChapterProgress,
+    bool? isReading,
     // ReadingSettingsType? readingSettings,
   }) {
     return EpubBookType(
       id: id ?? this.id,
+      isReading: isReading ?? this.isReading,
       title: title ?? this.title,
       updateTime: updateTime ?? this.updateTime,
       file: file ?? this.file,
@@ -63,6 +69,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
   factory EpubBookType.fromJson(Map<String, dynamic> json) {
     return EpubBookType(
       id: json["id"]?.toInt(),
+      isReading: json["isReading"],
       title: json["title"]?.toString(),
       updateTime: json["updateTime"]?.toString(),
       file: json["file"],
@@ -74,6 +81,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
 
   Map<String, dynamic> toJson() => {
         if (id != null) 'id': id,
+        if (isReading != null) 'isReading': isReading,
         if (title != null) 'title': title,
         if (updateTime != null) 'updateTime': updateTime,
         if (file != null) 'file': file,
@@ -86,7 +94,7 @@ class EpubBookType extends HiveObject with EquatableMixin {
 
   @override
   List<Object?> get props => [
-        id, title, updateTime, file, readingParagraphProgress,
+        id, title, updateTime, isReading, file, readingParagraphProgress,
         readingChapterProgress
         // readingSettings
       ];

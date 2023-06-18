@@ -155,10 +155,7 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
   }) async {
     await EpubBookBox().saveProgressEpubBook(
       ePub: widget.epubBook,
-      readingProgress: ReadingProgress(
-        readingParagraphProgress: readingProgress.readingParagraphProgress,
-        readingChapterProgress: readingProgress.readingChapterProgress,
-      ),
+      readingProgress: readingProgress,
       // readingSettings: ReadingSettingsType(
       //     readerMode:
       //         readerModeEnumTypeFromString(readingSettings.readerMode!.name),

@@ -165,7 +165,7 @@ class ReaderSettingState extends Equatable {
         lineHeight: readingSetting.lineHeight ?? EpubLineHeight.factor_1_5);
   }
 
-  num get scrollProgressPercentage {
+  int get scrollProgressPercentage {
     return (scrollProgressRatio * 100).ceil().toInt();
   }
 
