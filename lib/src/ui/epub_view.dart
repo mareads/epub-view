@@ -204,7 +204,9 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
       await widget.onEpubExit!(
           // readingSettings: readingSettings ?? const ReadingSettings(),
           readingProgress: ReadingProgress(
-              isNotFinish: scrollProgressPercentage != 100,
+              isNotFinish:
+                  _chapterParagraphs.length - 1 != _selectedChapterIndex &&
+                      scrollProgressPercentage != 100,
               readingParagraphProgress: readingParagraphProgress,
               readingChapterProgress: _selectedChapterIndex));
     }
