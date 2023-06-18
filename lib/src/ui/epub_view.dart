@@ -226,10 +226,14 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
     }
 
     _chapters = parseChapters(_controller._document!);
+
+    ///TODO: Right now compute string to html instance for whole epub file(all chapters), We can optimize to parse only active chapter to increase performance later.
     compute<ParseChapterParagraphsInterface, List<ChapterParagraphs?>>(
             parseChapterParagraphs,
             ParseChapterParagraphsInterface(
-                chapters: _chapters, content: _controller._document!.Content))
+                chapters: _chapters,
+                content: _controller._document!.Content,
+                isComicMode: widget.isComicMode))
         .then((List<ChapterParagraphs?> value) {
       _chapterParagraphs = value;
 

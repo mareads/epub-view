@@ -34,6 +34,18 @@ List<dom.Element> _removeAllDiv(List<dom.Element> elements) {
   return result;
 }
 
+List<dom.Element> _removeAllBr(List<dom.Element> elements) {
+  final List<dom.Element> result = [];
+
+  for (final node in elements) {
+    if (node.localName != 'br') {
+      result.add(node);
+    }
+  }
+
+  return result;
+}
+
 // List<ParagraphProgress> paragraphProgressList(
 //     {required List<Paragraph> paragraphs}) {
 //   final List<ParagraphProgress> paragraphProgressList = [];
@@ -110,10 +122,12 @@ ParseParagraphsResult parseParagraphs(
 class ParseChapterParagraphsInterface {
   final List<EpubChapter> chapters;
   final EpubContent? content;
+  final bool? isComicMode;
 
   const ParseChapterParagraphsInterface({
     required this.chapters,
     required this.content,
+    required this.isComicMode,
   });
 }
 
@@ -121,6 +135,7 @@ List<ChapterParagraphs?> parseChapterParagraphs(
     ParseChapterParagraphsInterface parseChapterParagraphsInterface) {
   final content = parseChapterParagraphsInterface.content;
   final chapters = parseChapterParagraphsInterface.chapters;
+  final isComicMode = parseChapterParagraphsInterface.isComicMode ?? false;
   String? filename = '';
   int chapterIndex = 0;
   final paragraphs = chapters.map<ChapterParagraphs?>((chapter) {
@@ -131,6 +146,9 @@ List<ChapterParagraphs?> parseChapterParagraphs(
       if (document != null) {
         final result = convertDocumentToElements(document);
         elmList = _removeAllDiv(result);
+        if (isComicMode) {
+          elmList = _removeAllBr(elmList);
+        }
         return ChapterParagraphs(paragraphs: elmList, chapterNo: chapterIndex);
       }
     }

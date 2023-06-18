@@ -45,6 +45,10 @@ class _ReaderSectionState extends State<ReaderSection> {
                   1
               : widget.controller.currentValueListenable.value!.paragraphNumber;
 
+      print("widget.currentChapter?.paragraphs.length.toDouble()");
+      print(widget.currentChapter?.paragraphs.length.toDouble());
+      print("currentParagraph");
+      print(currentParagraph);
       context.read<ReaderSettingCubit>().onScrollUpdate(UserScrollNotification(
           metrics: FixedScrollMetrics(
             maxScrollExtent:

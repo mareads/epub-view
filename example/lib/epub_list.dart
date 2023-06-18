@@ -178,6 +178,7 @@ class _EpubViewReaderState extends State<_EpubViewReader> {
     // inspect(widget.epubBook.readingProgress);
     return Scaffold(
       body: EpubView(
+        isComicMode: true,
         initReadingProgress: widget.epubBook.readingProgress,
         onEpubExit: _onEpubExit,
         // initReadingSettings: widget.epubBook.readingSettings,
