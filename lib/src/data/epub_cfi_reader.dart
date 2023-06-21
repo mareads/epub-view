@@ -135,7 +135,6 @@ class EpubCfiReader {
       return null;
     }
 
-    //TODO: remove these lines after back-end implemented
     final html = chapter.HtmlContent!.replaceAllMapped(
         RegExp(r'<\s*([^\s>]+)([^>]*)\/\s*>'),
         (match) => '<${match.group(1)}${match.group(2)}></${match.group(1)}>');

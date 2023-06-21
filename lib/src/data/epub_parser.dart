@@ -120,43 +120,40 @@ ParseParagraphsResult parseParagraphs(
 }
 
 class ParseChapterParagraphsInterface {
-  final List<EpubChapter> chapters;
+  final EpubChapter chapter;
   final EpubContent? content;
   final bool? isComicMode;
+  final int chapterIndex;
 
   const ParseChapterParagraphsInterface({
-    required this.chapters,
+    required this.chapter,
     required this.content,
     required this.isComicMode,
+    required this.chapterIndex,
   });
 }
 
-List<ChapterParagraphs?> parseChapterParagraphs(
+ChapterParagraphs? parseChapterParagraphs(
     ParseChapterParagraphsInterface parseChapterParagraphsInterface) {
-  final content = parseChapterParagraphsInterface.content;
-  final chapters = parseChapterParagraphsInterface.chapters;
+  final chapter = parseChapterParagraphsInterface.chapter;
+  final chapterIndex = parseChapterParagraphsInterface.chapterIndex;
   final isComicMode = parseChapterParagraphsInterface.isComicMode ?? false;
   String? filename = '';
-  int chapterIndex = 0;
-  final paragraphs = chapters.map<ChapterParagraphs?>((chapter) {
-    List<dom.Element> elmList = [];
-    if (filename != chapter.ContentFileName) {
-      filename = chapter.ContentFileName;
-      final document = EpubCfiReader().chapterDocument(chapter);
-      if (document != null) {
-        final result = convertDocumentToElements(document);
-        elmList = _removeAllDiv(result);
-        if (isComicMode) {
-          elmList = _removeAllBr(elmList);
-        }
-        return ChapterParagraphs(paragraphs: elmList, chapterNo: chapterIndex);
-      }
-    }
-    chapterIndex++;
-    return null;
-  });
 
-  return paragraphs.toList();
+  List<dom.Element> elmList = [];
+  if (filename != chapter.ContentFileName) {
+    filename = chapter.ContentFileName;
+    final document = EpubCfiReader().chapterDocument(chapter);
+    if (document != null) {
+      final result = convertDocumentToElements(document);
+      elmList = _removeAllDiv(result);
+      if (isComicMode) {
+        elmList = _removeAllBr(elmList);
+      }
+      return ChapterParagraphs(paragraphs: elmList, chapterNo: chapterIndex);
+    }
+  }
+  return null;
 }
 
 class ParseParagraphsResult {

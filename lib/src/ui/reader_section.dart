@@ -14,8 +14,11 @@ class ReaderSection extends StatefulWidget {
   final ChapterParagraphs? currentChapter;
   final EpubController controller;
   final Exception? loadingError;
-  final Widget Function(BuildContext context) buildLoaded;
-  final Widget Function(BuildContext context) buildLoadedHorizontal;
+  final ChapterParagraphs? chapterData;
+  final Widget Function(BuildContext context, ChapterParagraphs chapterData)
+      buildLoaded;
+  final Widget Function(BuildContext context, ChapterParagraphs chapterData)
+      buildLoadedHorizontal;
   const ReaderSection(
       {Key? key,
       required this.builders,
@@ -23,6 +26,7 @@ class ReaderSection extends StatefulWidget {
       required this.buildLoadedHorizontal,
       required this.loadingError,
       required this.controller,
+      required this.chapterData,
       this.currentChapter})
       : super(key: key);
 
@@ -33,34 +37,40 @@ class ReaderSection extends StatefulWidget {
 class _ReaderSectionState extends State<ReaderSection> {
   final List<ParagraphProgress> paragraphProgressList = [];
 
+  _scrollListener() {
+    final currentParagraph =
+        context.read<ReaderSettingCubit>().state.readerMode.isVertical
+            ? widget.controller.currentValueListenable.value!
+                    .currentAllParagraphIndex +
+                1
+            : widget.controller.currentValueListenable.value!.paragraphNumber;
+
+    // print("widget.currentChapter?.paragraphs.length.toDouble()");
+    // print(widget.currentChapter?.paragraphs.length.toDouble());
+    // print("currentParagraph");
+    // print(currentParagraph);
+    context.read<ReaderSettingCubit>().onScrollUpdate(UserScrollNotification(
+        metrics: FixedScrollMetrics(
+          maxScrollExtent: widget.currentChapter?.paragraphs.length.toDouble(),
+          pixels: currentParagraph.toDouble(),
+          minScrollExtent: 1,
+          viewportDimension: 1,
+          axisDirection: AxisDirection.right,
+        ),
+        context: context,
+        direction: ScrollDirection.idle));
+  }
+
   @override
   void initState() {
     super.initState();
 
-    widget.controller.currentValueListenable.addListener(() {
-      final currentParagraph =
-          context.read<ReaderSettingCubit>().state.readerMode.isVertical
-              ? widget.controller.currentValueListenable.value!
-                      .currentAllParagraphIndex +
-                  1
-              : widget.controller.currentValueListenable.value!.paragraphNumber;
+    widget.controller.currentValueListenable.addListener(_scrollListener);
+  }
 
-      print("widget.currentChapter?.paragraphs.length.toDouble()");
-      print(widget.currentChapter?.paragraphs.length.toDouble());
-      print("currentParagraph");
-      print(currentParagraph);
-      context.read<ReaderSettingCubit>().onScrollUpdate(UserScrollNotification(
-          metrics: FixedScrollMetrics(
-            maxScrollExtent:
-                widget.currentChapter?.paragraphs.length.toDouble(),
-            pixels: currentParagraph.toDouble(),
-            minScrollExtent: 1,
-            viewportDimension: 1,
-            axisDirection: AxisDirection.right,
-          ),
-          context: context,
-          direction: ScrollDirection.idle));
-    });
+  @override
+  void dispose() {
+    widget.controller.currentValueListenable.removeListener(_scrollListener);
   }
 
   @override
@@ -81,14 +91,14 @@ class _ReaderSectionState extends State<ReaderSection> {
                       ? ColoredBox(
                           color: state.themeMode.data.backgroundColor,
                           child: widget.builders.builder(
-                            context,
-                            widget.builders,
-                            widget.controller.loadingState.value,
-                            state.readerMode.isHorizontal
-                                ? widget.buildLoadedHorizontal
-                                : widget.buildLoaded,
-                            widget.loadingError,
-                          ),
+                              context,
+                              widget.builders,
+                              widget.controller.loadingState.value,
+                              state.readerMode.isHorizontal
+                                  ? widget.buildLoadedHorizontal
+                                  : widget.buildLoaded,
+                              widget.loadingError,
+                              widget.chapterData!),
                         )
                       : const Text("Loading..."),
                 ),

@@ -11,10 +11,14 @@ typedef EpubViewBuilder<T> = Widget Function(
   EpubViewLoadingState state,
 
   /// Loaded result builder
-  WidgetBuilder loadedBuilder,
+  Widget Function(BuildContext context, ChapterParagraphs chapterData)
+      loadedBuilder,
 
   /// Error of pdf loading
   Exception? loadingError,
+
+  /// Error of pdf loading
+  ChapterParagraphs chapterData,
 );
 
 typedef ChaptersBuilder = Widget Function(
