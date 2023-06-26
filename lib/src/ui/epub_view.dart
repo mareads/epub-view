@@ -1010,34 +1010,39 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
             final localOffset = box.globalToLocal(details.globalPosition);
             final x = localOffset.dx;
             final y = localOffset.dy;
-            final tapableHeight = box.size.height / 2;
-            final topTapableHeight = tapableHeight + box.size.height * 0.2;
-            final bottomTapableHeight = tapableHeight - box.size.height * 0.2;
-            if (y < topTapableHeight && y > bottomTapableHeight) {
-              if (x < box.size.width / 2) {
-                if (_pageController?.page == 0) {
-                  _onSelectChapter(
-                      chapterIndex: _selectedChapterIndex - 1,
-                      ctx: ctx,
-                      isLastPage: true);
-                } else {
-                  _pageController!.previousPage(
-                      duration: const Duration(milliseconds: 100),
-                      curve: Curves.linear);
-                }
+            // final tapableHeight = box.size.height / 2;
+            final horizontalCenter = box.size.width / 2;
+            final tapableLeft = horizontalCenter - box.size.width * 0.3;
+            final tapableRight = horizontalCenter + box.size.width * 0.3;
+            // final topTapableHeight = tapableHeight + box.size.height * 0.35;
+            // final bottomTapableHeight = tapableHeight - box.size.height * 0.35;
+            // if (y < topTapableHeight && y > bottomTapableHeight) {
+            if (x < tapableLeft) {
+              if (_pageController?.page == 0) {
+                _onSelectChapter(
+                    chapterIndex: _selectedChapterIndex - 1,
+                    ctx: ctx,
+                    isLastPage: true);
               } else {
-                if (_pageController?.page == horizontalParagraphs!.length - 1) {
-                  _onSelectChapter(
-                      chapterIndex: _selectedChapterIndex + 1, ctx: ctx);
-                } else {
-                  _pageController!.nextPage(
-                      duration: const Duration(milliseconds: 100),
-                      curve: Curves.linear);
-                }
+                _pageController!.previousPage(
+                    duration: const Duration(milliseconds: 100),
+                    curve: Curves.linear);
+              }
+            } else if (x > tapableRight) {
+              if (_pageController?.page == horizontalParagraphs!.length - 1) {
+                _onSelectChapter(
+                    chapterIndex: _selectedChapterIndex + 1, ctx: ctx);
+              } else {
+                _pageController!.nextPage(
+                    duration: const Duration(milliseconds: 100),
+                    curve: Curves.linear);
               }
             } else {
               ctx.read<ReaderSettingCubit>().onToggleAppBar();
             }
+            // } else {
+            //   ctx.read<ReaderSettingCubit>().onToggleAppBar();
+            // }
           },
           child: FutureBuilder<List<HorizontalParagraph>>(
               future: pages,
