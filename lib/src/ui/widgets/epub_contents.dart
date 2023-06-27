@@ -95,6 +95,7 @@ class EpubViewContents extends StatelessWidget {
                 controller: scroll,
                 child: ListView.builder(
                   controller: scroll,
+                  shrinkWrap: true,
                   key: Key('$runtimeType.content'),
                   itemBuilder: (___, index) {
                     int chapterNumber = chapterData?.chapterNumber ?? 0;
@@ -176,7 +177,10 @@ class EpubViewContents extends StatelessWidget {
                   elevation: 8.0,
                   textStyle: _style,
                   child: Container(
-                    constraints: const BoxConstraints(maxHeight: 400),
+                    constraints: const BoxConstraints(
+                      minHeight: 50,
+                      maxHeight: 390,
+                    ),
                     decoration: BoxDecoration(color: backgroundColor),
                     padding: const EdgeInsets.all(4),
                     child: content,

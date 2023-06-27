@@ -26,12 +26,9 @@ class BrightnessSettingWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Image.asset(
-              themeMode.isDarkMode
-                  ? "assets/images/brightness_setting_white@3x.png"
-                  : "assets/images/brightness_setting@3x.png",
+              iconAssets(themeMode),
               width: 30,
               height: 30,
-              color: themeMode.isDarkMode ? null : themeMode.data.textColor,
               package: "epub_view",
             ),
             const SizedBox(width: 15),
@@ -69,5 +66,15 @@ class BrightnessSettingWidget extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String iconAssets(EpubThemeMode themeMode) {
+    if (themeMode.isLightMode || themeMode.isSepiaMode) {
+      return "assets/images/brightness_setting_light@3x.png";
+    } else if (themeMode.isDarkMode) {
+      return "assets/images/brightness_setting_dark@3x.png";
+    } else {
+      return "assets/images/brightness_setting_darkend@3x.png";
+    }
   }
 }

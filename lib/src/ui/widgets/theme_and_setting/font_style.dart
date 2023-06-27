@@ -37,7 +37,6 @@ class FontsStyleWidget extends StatelessWidget {
                   iconDisabledColor: Colors.grey,
                 ),
                 dropdownStyleData: DropdownStyleData(
-                  maxHeight: 140,
                   padding: null,
                   decoration: BoxDecoration(
                     border: Border.all(color: state.themeMode.data.borderColor),
