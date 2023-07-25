@@ -56,6 +56,7 @@ class _ReaderSectionState extends State<ReaderSection> {
           minScrollExtent: 1,
           viewportDimension: 1,
           axisDirection: AxisDirection.right,
+          devicePixelRatio: MediaQuery.of(context).devicePixelRatio,
         ),
         context: context,
         direction: ScrollDirection.idle));
