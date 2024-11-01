@@ -906,35 +906,35 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                 ),
               )),
             },
-            customRenders: {
-              tagMatcher('p'):
-                  CustomRender.widget(widget: (context, buildChildren) {
-                return Text(
-                  " " * indentCount + (context.tree.element?.text ?? ""),
-                  style: TextStyle(
-                    height: state.lineHeight.value,
-                    fontWeight: FontWeight.w300,
-                    fontFamily: state.fontFamily.family,
-                    fontSize: state.fontFamily.isJsJindara
-                        ? state.fontSize.dataJs
-                        : state.fontSize.data,
-                    color: state.themeMode.data.textColor,
-                  ),
-                );
-              }),
-              tagMatcher('img'):
-                  CustomRender.widget(widget: (context, buildChildren) {
-                final url = context.tree.element!.attributes['src']!
-                    .replaceAll('../', '');
-                return Image(
-                  image: MemoryImage(
-                    Uint8List.fromList(
-                      document.Content!.Images![url]!.Content!,
-                    ),
-                  ),
-                );
-              }),
-            },
+            // customRenders: {
+              // tagMatcher('p'):
+              //     CustomRender.widget(widget: (context, buildChildren) {
+              //   return Text(
+              //     " " * indentCount + (context.tree.element?.text ?? ""),
+              //     style: TextStyle(
+              //       height: state.lineHeight.value,
+              //       fontWeight: FontWeight.w300,
+              //       fontFamily: state.fontFamily.family,
+              //       fontSize: state.fontFamily.isJsJindara
+              //           ? state.fontSize.dataJs
+              //           : state.fontSize.data,
+              //       color: state.themeMode.data.textColor,
+              //     ),
+              //   );
+              // }),
+              // tagMatcher('img'):
+              //     CustomRender.widget(widget: (context, buildChildren) {
+              //   final url = context.tree.element!.attributes['src']!
+              //       .replaceAll('../', '');
+              //   return Image(
+              //     image: MemoryImage(
+              //       Uint8List.fromList(
+              //         document.Content!.Images![url]!.Content!,
+              //       ),
+              //     ),
+              //   );
+              // }),
+            // },
           ),
         );
       },
@@ -1100,7 +1100,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                       )),
                                     },
 
-                                    customRenders: {
+                                    // customRenders: {
                                       // tagMatcher('p'): CustomRender.widget(
                                       //     widget: (context, buildChildren) {
                                       //   return Wrap(
@@ -1161,32 +1161,32 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                                       //         color: context.tree.style.color,
                                       //       ));
                                       // }),
-                                      tagMatcher('img'): CustomRender.widget(
-                                          widget: (context, buildChildren) {
-                                        final url = context
-                                            .tree.element!.attributes['src']!
-                                            .replaceAll('../', '');
-                                        return Center(
-                                          child: Image(
-                                            image: MemoryImage(
-                                              Uint8List.fromList(
-                                                widget
-                                                    .controller
-                                                    ._document!
-                                                    .Content!
-                                                    .Images![url]!
-                                                    .Content!,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }),
+                                      // tagMatcher('img'): CustomRender.widget(
+                                      //     widget: (context, buildChildren) {
+                                      //   final url = context
+                                      //       .tree.element!.attributes['src']!
+                                      //       .replaceAll('../', '');
+                                      //   return Center(
+                                      //     child: Image(
+                                      //       image: MemoryImage(
+                                      //         Uint8List.fromList(
+                                      //           widget
+                                      //               .controller
+                                      //               ._document!
+                                      //               .Content!
+                                      //               .Images![url]!
+                                      //               .Content!,
+                                      //         ),
+                                      //       ),
+                                      //     ),
+                                      //   );
+                                      // }),
                                       // tagMatcher('wbr'):
                                       //     CustomRender.inlineSpan(inlineSpan:
                                       //         (context, buildChildren) {
                                       //   return const TextSpan(text: "\u200B");
                                       // }),
-                                    },
+                                    // },
                                   ),
                                 ),
                               );
