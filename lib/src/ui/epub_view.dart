@@ -888,7 +888,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
               : options.mobileParagraphPadding,
           child: Html(
             data: paragraphs[index].outerHtml,
-            onLinkTap: (href, _, __, ___) => onExternalLinkPressed(href!),
+            onLinkTap: (href, _, __) => onExternalLinkPressed(href!),
             style: {
               'h1': headerFontStyle,
               'h2': headerFontStyle,
@@ -906,6 +906,7 @@ class _EpubViewState extends State<EpubView> with TickerProviderStateMixin {
                 ),
               )),
             },
+            extensions: [],
             // customRenders: {
               // tagMatcher('p'):
               //     CustomRender.widget(widget: (context, buildChildren) {
